@@ -24,6 +24,8 @@ A sophisticated neuro-symbolic AI system that combines Large Language Models (LL
 
 ## 🏗️ Architecture
 
+![Neuro-Symbolic Architecture](neuro_symbolic.png)
+
 ```
 🧠 Neural Engine (LLM)     +     🛡️ Symbolic Engine (Formal Logic)
 ├── OpenAI GPT-4o-mini           ├── Open Policy Agent (OPA/Rego)
