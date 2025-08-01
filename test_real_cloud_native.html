@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>REAL 12-Factor App Validator (LLM + Z3 SMT)</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; background: #f5f5f5; }
+        h1 { color: #d73502; }
+        .subtitle { color: #666; font-style: italic; margin-bottom: 2rem; }
+        .artifact-section { background: white; padding: 2rem; margin: 1rem 0; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        textarea { width: 100%; min-height: 150px; margin: 0.5rem 0; padding: 1rem; border: 1px solid #ddd; border-radius: 4px; font-family: 'Monaco', 'Menlo', monospace; font-size: 0.9rem; }
+        button { padding: 0.75rem 1.5rem; margin: 0.5rem; background: #d73502; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #b82e02; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        button.load-example { background: #28a745; }
+        button.load-example:hover { background: #218838; }
+        .results { margin-top: 2rem; }
+        .violation { background: #fff3cd; border: 1px solid #ffeaa7; padding: 1rem; margin: 0.5rem 0; border-radius: 4px; }
+        .violation.critical { background: #f8d7da; border-color: #f5c6cb; }
+        .violation.high { background: #fff3cd; border-color: #ffeaa7; }
+        .violation.medium { background: #d1ecf1; border-color: #bee5eb; }
+        .facts-section { background: #e8f4fd; padding: 1rem; margin: 1rem 0; border-radius: 4px; }
+        .fact { font-size: 0.9rem; margin: 0.25rem 0; background: rgba(255,255,255,0.7); padding: 0.5rem; border-radius: 4px; }
+        .compliance-score { font-size: 1.5rem; font-weight: bold; padding: 1rem; text-align: center; border-radius: 8px; }
+        .compliance-score.good { background: #d4edda; color: #155724; }
+        .compliance-score.bad { background: #f8d7da; color: #721c24; }
+        .file-tabs { display: flex; margin-bottom: 1rem; }
+        .file-tab { padding: 0.5rem 1rem; margin-right: 0.5rem; background: #e9ecef; border: none; border-radius: 4px 4px 0 0; cursor: pointer; }
+        .file-tab.active { background: white; border-bottom: 2px solid #d73502; }
+        .real-badge { background: #d73502; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
+        .engine-info { background: #f8f9fa; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; border-left: 4px solid #d73502; }
+        .loading { text-align: center; padding: 2rem; }
+        .spinner { border: 3px solid #f3f3f3; border-top: 3px solid #d73502; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .z3-model { background: #2d3748; color: #e2e8f0; padding: 1rem; border-radius: 4px; font-family: monospace; font-size: 0.8rem; margin-top: 0.5rem; }
+    </style>
+</head>
+<body>
+    <h1>🧠🛡️ REAL 12-Factor App + Cloud-Native Validator</h1>
+    <div class="subtitle">
+        <span class="real-badge">REAL</span> Neuro-Symbolic Architecture Validation using 
+        <strong>OpenAI LLM</strong> + <strong>Z3 SMT Solver</strong>
+    </div>
+    
+    <div class="engine-info">
+        <strong>🧠 Neural Engine:</strong> OpenAI GPT-4o-mini for parsing application artifacts<br>
+        <strong>🛡️ Symbolic Engine:</strong> Microsoft Z3 SMT Solver for constraint satisfaction<br>
+        <strong>📐 Architecture Rules:</strong> 12-Factor App Principles encoded as Z3 constraints
+    </div>
+    
+    <div class="artifact-section">
+        <h2>Application Artifacts</h2>
+        <p>Upload your SAP BTP application files for <strong>REAL</strong> validation against 12-factor principles.</p>
+        
+        <div class="file-tabs">
+            <button class="file-tab active" onclick="showFileTab('mta')">mta.yaml</button>
+            <button class="file-tab" onclick="showFileTab('dockerfile')">Dockerfile</button>
+            <button class="file-tab" onclick="showFileTab('env')">.env</button>
+            <button class="file-tab" onclick="showFileTab('code')">app.js</button>
+        </div>
+        
+        <div id="mta-tab" class="file-content">
+            <label><strong>mta.yaml</strong> - Multi-Target Application descriptor</label>
+            <textarea id="mtaYaml" placeholder="Paste your mta.yaml content here..."></textarea>
+        </div>
+        
+        <div id="dockerfile-tab" class="file-content" style="display: none;">
+            <label><strong>Dockerfile</strong> - Container build instructions</label>
+            <textarea id="dockerfile" placeholder="Paste your Dockerfile content here..."></textarea>
+        </div>
+        
+        <div id="env-tab" class="file-content" style="display: none;">
+            <label><strong>.env</strong> - Environment configuration</label>
+            <textarea id="envFile" placeholder="Paste your .env file content here..."></textarea>
+        </div>
+        
+        <div id="code-tab" class="file-content" style="display: none;">
+            <label><strong>app.js</strong> - Application code</label>
+            <textarea id="codeFile" placeholder="Paste your JavaScript/TypeScript code here..."></textarea>
+        </div>
+        
+        <div style="margin-top: 1rem;">
+            <button class="load-example" onclick="loadViolatingExample()">📁 Load Example with Violations</button>
+            <button id="validateBtn" onclick="validateWithRealNeuroSymbolic()">
+                🧠🛡️ REAL Validate (LLM + Z3)
+            </button>
+        </div>
+    </div>
+
+    <div id="loading" class="loading" style="display: none;">
+        <div class="spinner"></div>
+        <h3>Running REAL Neuro-Symbolic Validation...</h3>
+        <p>🧠 Neural: OpenAI LLM parsing artifacts...<br>
+        🛡️ Symbolic: Z3 SMT solver checking constraints...</p>
+    </div>
+
+    <div id="results" class="results" style="display: none;">
+        <div id="engineStatus" class="engine-info" style="margin-bottom: 2rem;"></div>
+        <div id="complianceScore"></div>
+        
+        <div id="violations" style="margin-top: 2rem;">
+            <h3>🚨 Z3 SMT Solver Violations</h3>
+            <div id="violationsList"></div>
+        </div>
+        
+        <div id="facts" class="facts-section" style="margin-top: 2rem;">
+            <h3>🧠 LLM Extracted Architecture Facts</h3>
+            <div id="factsList"></div>
+        </div>
+    </div>
+
+    <script>
+        function showFileTab(tabName) {
+            // Hide all file content divs
+            document.querySelectorAll('.file-content').forEach(div => {
+                div.style.display = 'none';
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.file-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').style.display = 'block';
+            event.target.classList.add('active');
+        }
+
+        function loadViolatingExample() {
+            document.getElementById('mtaYaml').value = `_schema-version: "3.1"
+ID: invoice-app
+description: SAP BTP Invoice Management Application
+version: 1.0.0
+
+modules:
+  - name: srv
+    type: nodejs
+    path: srv
+    properties:
+      DATABASE_URL: "localhost:5432/invoices"  # Factor II violation
+      API_SECRET: "mysecret123"  # Factor II violation
+      PAYMENT_KEY: "hardcoded-key"  # Factor II violation
+    requires:
+      - name: hana-db
+      - name: destination-service
+
+resources:
+  - name: hana-db
+    type: com.sap.xs.hdi-container`;
+
+            document.getElementById('dockerfile').value = `FROM node:18-alpine
+
+# Factor V violations - secrets in build artifact
+ENV API_KEY=secret123
+ENV DATABASE_PASSWORD=admin
+ENV PAYMENT_TOKEN=abc123
+
+# Factor VI violations - filesystem dependencies
+VOLUME /app/data
+VOLUME /app/logs
+RUN mkdir -p /app/temp
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+CMD ["npm", "start"]`;
+
+            document.getElementById('envFile').value = `# Factor II violation - this file should not exist in VCS
+DATABASE_URL=postgres://user:pass@localhost:5432/db
+API_SECRET=mysecretkey123
+PAYMENT_SERVICE_URL=https://payments.internal.com
+ADMIN_PASSWORD=admin123
+JWT_SECRET=hardcoded-jwt-secret`;
+
+            document.getElementById('codeFile').value = `const express = require('express');
+const app = express();
+
+// Factor II violations - hardcoded config
+const config = {
+    database: 'postgres://localhost:5432/invoices',
+    apiSecret: 'hardcoded-secret',
+    paymentKey: 'sk-test-12345'
+};
+
+// Factor XII violation - admin process mixed with app logic
+if (process.argv.includes('--reset-db')) {
+    console.log('Resetting database...');
+    resetDatabase();
+    process.exit(0);
+}
+
+// Factor VI violation - filesystem dependency
+const fs = require('fs');
+const logFile = '/app/logs/app.log';
+
+app.get('/health', (req, res) => {
+    fs.appendFileSync(logFile, 'Health check\\n');
+    res.json({ status: 'ok' });
+});
+
+app.listen(3000, () => {
+    console.log('Server running on port 3000');
+});`;
+        }
+
+        async function validateWithRealNeuroSymbolic() {
+            const artifacts = {
+                'mta.yaml': document.getElementById('mtaYaml').value,
+                'Dockerfile': document.getElementById('dockerfile').value,
+                '.env': document.getElementById('envFile').value,
+                'app.js': document.getElementById('codeFile').value
+            };
+
+            // Filter out empty artifacts
+            const filteredArtifacts = {};
+            for (const [key, value] of Object.entries(artifacts)) {
+                if (value.trim()) {
+                    filteredArtifacts[key] = value;
+                }
+            }
+
+            if (Object.keys(filteredArtifacts).length === 0) {
+                alert('Please provide at least one artifact to validate');
+                return;
+            }
+
+            // Show loading
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('validateBtn').disabled = true;
+
+            try {
+                console.log('🧠🛡️ Starting REAL neuro-symbolic validation...');
+                
+                const response = await fetch('http://localhost:9000/api/validate_cloud_native_real', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ artifacts: filteredArtifacts })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'REAL validation failed');
+                }
+
+                console.log('🧠🛡️ REAL validation complete:', data);
+                showRealResults(data);
+
+            } catch (error) {
+                console.error('REAL validation error:', error);
+                alert('Error: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('validateBtn').disabled = false;
+            }
+        }
+
+        function showRealResults(data) {
+            document.getElementById('results').style.display = 'block';
+
+            // Show engine status
+            document.getElementById('engineStatus').innerHTML = `
+                <strong>🧠 Neural Engine:</strong> ${data.neural_engine} extracted ${data.facts.length} facts<br>
+                <strong>🛡️ Symbolic Engine:</strong> ${data.symbolic_engine} found ${data.violation_count} violations<br>
+                <strong>📊 Method:</strong> ${data.method}
+            `;
+
+            // Show compliance score
+            const score = Math.round(data.compliance_score * 100);
+            const scoreDiv = document.getElementById('complianceScore');
+            scoreDiv.className = `compliance-score ${score >= 80 ? 'good' : 'bad'}`;
+            scoreDiv.innerHTML = `
+                <div>REAL Architecture Compliance Score: ${score}%</div>
+                <div style="font-size: 1rem; margin-top: 0.5rem;">
+                    Z3 SMT Solver found ${data.violation_count} violations from ${data.facts.length} LLM-extracted facts
+                </div>
+            `;
+
+            // Show violations with Z3 details
+            const violationsList = document.getElementById('violationsList');
+            if (data.violations.length === 0) {
+                violationsList.innerHTML = '<div style="color: green; font-weight: bold;">✅ Z3 SMT Solver found NO violations! Your application follows 12-factor principles.</div>';
+            } else {
+                violationsList.innerHTML = data.violations.map(v => `
+                    <div class="violation ${v.severity}">
+                        <div style="font-weight: bold; margin-bottom: 0.5rem;">
+                            🚨 Factor ${v.factor_number}: ${v.principle_name}
+                            <span style="float: right; background: rgba(0,0,0,0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.8rem;">
+                                ${v.severity.toUpperCase()}
+                            </span>
+                        </div>
+                        <div style="margin-bottom: 0.5rem;"><strong>Z3 SMT Detection:</strong> ${v.description}</div>
+                        <div style="margin-bottom: 0.5rem;"><strong>Details:</strong> ${v.violation_details}</div>
+                        <div style="margin-bottom: 0.5rem;"><strong>Impact:</strong> ${v.impact}</div>
+                        <div style="color: #d73502;"><strong>Fix:</strong> ${v.suggested_fix}</div>
+                        <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">📁 ${v.file_path}</div>
+                        ${v.z3_model ? `<div class="z3-model"><strong>Z3 Model:</strong><br>${v.z3_model}</div>` : ''}
+                    </div>
+                `).join('');
+            }
+
+            // Show LLM-extracted facts with Z3 constraints
+            const factsList = document.getElementById('factsList');
+            factsList.innerHTML = data.facts.map(f => `
+                <div class="fact">
+                    <strong>LLM Fact:</strong> ${f.fact_type} | ${f.entity}.${f.property} = ${f.value}<br>
+                    <strong>Z3 Constraint:</strong> <code>${f.z3_constraint}</code><br>
+                    <span style="color: #666;">Source: ${f.source_file}</span>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>

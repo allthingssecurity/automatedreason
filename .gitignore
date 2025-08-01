@@ -1,0 +1,48 @@
+# Environment variables and secrets
+.env
+*.env
+.env.local
+.env.production
+.env.staging
+
+# OpenAI API keys
+*openai*key*
+*api*key*
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Logs
+*.log
+server.log
+nohup.out
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
+
+# OPA binary (user-specific)
+opa
+/bin/opa
+# But allow OPA policy files
+!policies/opa/
+!policies/opa/*.rego

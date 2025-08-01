@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>XSUAA Test</title>
+</head>
+<body>
+    <div id="xsuaa-tab" style="display: block;">
+        <h1 style="color: red; font-size: 2rem; padding: 2rem;">🧠🛡️ XSUAA Neuro-Symbolic Policy Engine</h1>
+        
+        <div style="padding: 2rem; background: white; margin: 1rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <h2>XSUAA Policy Configuration</h2>
+            <textarea 
+                id="xsuaaPolicyInput"
+                style="width: 100%; height: 200px; margin: 1rem 0; padding: 1rem; border: 1px solid #ddd; border-radius: 4px;"
+                placeholder="Paste your xs-security.json here"
+            ></textarea>
+            
+            <button onclick="loadXsuaaExample()" style="padding: 0.5rem 1rem; margin-right: 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                Load Example Policy
+            </button>
+        </div>
+
+        <div style="padding: 2rem; background: white; margin: 1rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <h2>🧠🛡️ Natural Language Access Query</h2>
+            <input 
+                type="text" 
+                id="accessQueryInput"
+                style="width: 100%; padding: 1rem; margin: 1rem 0; border: 1px solid #ddd; border-radius: 4px;"
+                placeholder="Ask: 'Can user john.doe access the payments API?' or 'Can jane.smith approve payments?' or 'Can bob.wilson delete invoices?'"
+            />
+            
+            <button onclick="evaluateAccess()" id="evaluateAccessBtn" style="padding: 0.5rem 1rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                🧠🛡️ Evaluate Access
+            </button>
+            
+            <div id="accessResults" style="display: none; margin-top: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
+                <h3>Results:</h3>
+                <div id="logicalQuery"></div>
+                <div id="policyDecision"></div>
+            </div>
+        </div>
+        
+        <div id="xsuaaErrorMessage" style="color: red; padding: 1rem;"></div>
+    </div>
+
+    <script>
+        function loadXsuaaExample() {
+            document.getElementById('xsuaaPolicyInput').value = JSON.stringify({
+                "scopes": [
+                    {"name": "read_invoices"},
+                    {"name": "write_invoices"}, 
+                    {"name": "approve_payments"},
+                    {"name": "delete_invoices"}
+                ],
+                "role-templates": [
+                    {
+                        "name": "FinanceManager",
+                        "scope-references": ["read_invoices", "write_invoices", "approve_payments"]
+                    },
+                    {
+                        "name": "Accountant", 
+                        "scope-references": ["read_invoices", "write_invoices"]
+                    },
+                    {
+                        "name": "Auditor",
+                        "scope-references": ["read_invoices"]
+                    }
+                ],
+                "users": {
+                    "john.doe": ["Accountant"],
+                    "jane.smith": ["FinanceManager"],
+                    "bob.wilson": ["Auditor"],
+                    "alice.chen": ["FinanceManager", "Auditor"],
+                    "tom.admin": ["Administrator"]
+                }
+            }, null, 2);
+        }
+
+        async function evaluateAccess() {
+            const query = document.getElementById('accessQueryInput').value.trim();
+            const policyText = document.getElementById('xsuaaPolicyInput').value.trim();
+            
+            if (!query || !policyText) {
+                alert('Please enter both query and policy');
+                return;
+            }
+
+            let xsSecurityPolicy;
+            try {
+                xsSecurityPolicy = JSON.parse(policyText);
+            } catch (e) {
+                alert('Invalid JSON in policy configuration');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:9000/api/evaluate_xsuaa_access', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        query: query,
+                        xs_security: xsSecurityPolicy
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Access evaluation failed');
+                }
+
+                // Show results
+                const decision = data.decision;
+                document.getElementById('logicalQuery').innerHTML = `
+                    <h4>Neural Translation:</h4>
+                    <div>User: ${data.logical_query.user_id}</div>
+                    <div>Action: ${data.logical_query.action}</div>
+                    <div>Resource: ${data.logical_query.resource}</div>
+                `;
+
+                document.getElementById('policyDecision').innerHTML = `
+                    <h4>Symbolic Decision:</h4>
+                    <div style="color: ${decision.allowed ? 'green' : 'red'}; font-weight: bold;">
+                        ${decision.allowed ? '✅ ACCESS GRANTED' : '❌ ACCESS DENIED'}
+                    </div>
+                    <div>Reason: ${decision.reason}</div>
+                    <div>Roles: ${decision.applicable_roles.join(', ')}</div>
+                    <div>Scopes: ${decision.applicable_scopes.join(', ')}</div>
+                `;
+
+                document.getElementById('accessResults').style.display = 'block';
+
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

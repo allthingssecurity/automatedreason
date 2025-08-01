@@ -1,0 +1,2091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAP K8s Policy Validator - Neuro-Symbolic AI</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --sap-blue: #0070f2;
+            --sap-dark-blue: #0053ba;
+            --sap-light-blue: #d9efff;
+            --sap-green: #30914c;
+            --sap-orange: #ff8800;
+            --sap-purple: #7b68ee;
+            --neural-color: #ff6b6b;
+            --symbolic-color: #4ecdc4;
+            --text-dark: #1d1d1f;
+            --text-gray: #6e6e73;
+            --bg-light: #fbfbfd;
+            --white: #ffffff;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 8px 30px rgba(0, 0, 0, 0.12);
+            --border-radius: 12px;
+            --border-radius-large: 20px;
+            --success: #28a745;
+            --warning: #ffc107;
+            --danger: #dc3545;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--bg-light) 0%, #f0f9ff 100%);
+            min-height: 100vh;
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--white);
+            border-radius: var(--border-radius-large);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--neural-color) 0%, var(--sap-blue) 50%, var(--symbolic-color) 100%);
+        }
+
+        .header-content {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 2rem;
+            align-items: center;
+        }
+
+        .header-text h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .header-text p {
+            color: var(--text-gray);
+            font-size: 1.1rem;
+            max-width: 600px;
+        }
+
+        .neuro-symbolic-badge {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: linear-gradient(135deg, var(--neural-color), var(--symbolic-color));
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: var(--border-radius);
+            font-weight: 600;
+            box-shadow: var(--shadow);
+        }
+
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .status-connected {
+            background: #d4fdd4;
+            color: var(--sap-green);
+        }
+
+        .status-disconnected {
+            background: #fdd4d4;
+            color: #c53030;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .panel {
+            background: var(--white);
+            border-radius: var(--border-radius-large);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: var(--shadow-hover);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .panel-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .neural-panel .panel-header {
+            border-bottom-color: var(--neural-color);
+        }
+
+        .neural-panel .panel-title {
+            color: var(--neural-color);
+        }
+
+        .symbolic-panel .panel-header {
+            border-bottom-color: var(--symbolic-color);
+        }
+
+        .symbolic-panel .panel-title {
+            color: var(--symbolic-color);
+        }
+
+        .input-section {
+            margin-bottom: 2rem;
+        }
+
+        .input-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+        }
+
+        .requirement-input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e5e5ea;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .requirement-input:focus {
+            outline: none;
+            border-color: var(--neural-color);
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--neural-color), #ff5252);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--white);
+            color: var(--text-gray);
+            border: 2px solid #e5e5ea;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-generating {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-validating {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-repairing {
+            background: #e2e3e5;
+            color: #41464b;
+        }
+
+        .status-violations {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-compliant {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-complete {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .yaml-container {
+            background: #2d2d2d;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            max-height: 500px;
+            overflow-y: auto;
+            word-break: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .yaml-header {
+            background: #1a1a1a;
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            font-size: 0.9rem;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .yaml-content {
+            padding: 1rem;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 0.85rem;
+            line-height: 1.4;
+            overflow-x: auto;
+            white-space: pre;
+        }
+
+        .yaml-content code {
+            background: none !important;
+            color: inherit !important;
+            padding: 0 !important;
+            font-size: inherit !important;
+            white-space: pre !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+        }
+
+        .policy-violations {
+            margin-bottom: 1rem;
+        }
+
+        .violation-item {
+            background: #ffeaea;
+            border: 1px solid #ffcdd2;
+            border-left: 4px solid var(--danger);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: var(--border-radius);
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .violation-title {
+            font-weight: 600;
+            color: var(--danger);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .violation-description {
+            color: #721c24;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .policy-rules {
+            background: #f8f9fa;
+            border-radius: var(--border-radius);
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .policy-rule {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .policy-rule:last-child {
+            border-bottom: none;
+        }
+
+        .rule-status {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .rule-status.pass {
+            background: var(--success);
+        }
+
+        .rule-status.fail {
+            background: var(--danger);
+        }
+
+        .rule-text {
+            flex: 1;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .progress-flow {
+            background: var(--white);
+            border-radius: var(--border-radius-large);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .flow-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .flow-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            flex: 1;
+            position: relative;
+        }
+
+        .step-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: white;
+            margin-bottom: 0.75rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .step-circle.neural {
+            background: var(--neural-color);
+        }
+
+        .step-circle.symbolic {
+            background: var(--symbolic-color);
+        }
+
+        .step-circle.complete {
+            background: var(--success);
+        }
+
+        .step-circle.active {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 currentColor; opacity: 1; }
+            70% { box-shadow: 0 0 0 10px currentColor; opacity: 0; }
+            100% { box-shadow: 0 0 0 0 currentColor; opacity: 0; }
+        }
+
+        .step-label {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .step-description {
+            font-size: 0.8rem;
+            color: var(--text-gray);
+        }
+
+        .flow-connector {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            right: -50%;
+            height: 2px;
+            background: #e0e0e0;
+            z-index: 1;
+        }
+
+        .flow-connector.active {
+            background: linear-gradient(90deg, var(--neural-color), var(--symbolic-color));
+        }
+
+        .results-section {
+            display: none;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .results-section.show {
+            display: grid;
+        }
+
+        .final-manifest {
+            background: var(--white);
+            border-radius: var(--border-radius-large);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+        }
+
+        .manifest-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .manifest-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .compliance-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--success);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: var(--border-radius);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .ai-explanation {
+            background: #f8f9fa;
+            border-left: 4px solid var(--sap-blue);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+        }
+
+        .explanation-title {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .explanation-text {
+            color: var(--text-gray);
+            line-height: 1.6;
+        }
+
+        .download-actions {
+            display: flex;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn-download {
+            background: var(--sap-blue);
+            color: white;
+        }
+
+        .btn-copy {
+            background: var(--white);
+            color: var(--sap-blue);
+            border: 2px solid var(--sap-blue);
+        }
+
+        .error-message {
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+            color: #c53030;
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1rem;
+            display: none;
+            line-height: 1.5;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @media (max-width: 1200px) {
+            .main-grid,
+            .results-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .header-content {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            background: var(--white);
+            border-radius: var(--border-radius-large);
+            box-shadow: var(--shadow);
+            padding: 1rem;
+        }
+
+        .tab-button {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1.5rem;
+            border: none;
+            border-radius: var(--border-radius);
+            background: #f8f9fa;
+            color: var(--text-gray);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .tab-button.active {
+            background: linear-gradient(135deg, var(--sap-blue), var(--sap-dark-blue));
+            color: white;
+            box-shadow: var(--shadow);
+        }
+
+        .tab-button:hover:not(.active) {
+            background: #e9ecef;
+            transform: translateY(-1px);
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .xsuaa-section {
+            display: block;
+            margin-bottom: 2rem;
+        }
+
+        .evaluation-step {
+            margin: 1.5rem 0;
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            background: var(--bg-lighter);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .logical-query {
+            background: var(--bg-code);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        .policy-decision {
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            font-size: 0.95rem;
+        }
+
+        .policy-decision.allowed {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            color: #2e7d32;
+        }
+
+        .policy-decision.denied {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            color: #c62828;
+        }
+
+        .decision-details {
+            margin-top: 0.75rem;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .decision-details .detail-item {
+            margin: 0.5rem 0;
+        }
+
+        .query-section {
+            background: var(--white);
+            border-radius: var(--border-radius-large);
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+
+        .query-input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e5e5ea;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .query-response {
+            background: #f8f9fa;
+            border-left: 4px solid var(--sap-blue);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            margin-top: 1rem;
+        }
+
+        .security-violations {
+            margin-top: 1rem;
+        }
+
+        .security-violation {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-left: 4px solid var(--sap-orange);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-radius: var(--border-radius);
+        }
+
+        .security-violation.critical {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            border-left-color: var(--danger);
+        }
+
+        .security-violation.high {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+            border-left-color: var(--warning);
+        }
+
+        @media (max-width: 1200px) {
+            .xsuaa-section {
+                display: block;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .flow-steps {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .flow-connector {
+                display: none;
+            }
+
+            .tab-navigation {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-content">
+                <div class="header-text">
+                    <h1><i class="fas fa-brain"></i> SAP Neuro-Symbolic Security Analyzer</h1>
+                    <p>AI-Powered Kubernetes & XSUAA Security Policy Validation</p>
+                </div>
+                <div class="neuro-symbolic-badge">
+                    <i class="fas fa-robot"></i>
+                    <span>Neural + Symbolic</span>
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+            </div>
+            <div class="status-indicator status-disconnected" id="connectionStatus">
+                <i class="fas fa-circle"></i>
+                <span>Connecting...</span>
+            </div>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" onclick="switchTab('kubernetes')">
+                <i class="fas fa-cubes"></i> Kubernetes Policies
+            </button>
+            <button class="tab-button" onclick="switchTab('xsuaa')">
+                <i class="fas fa-shield-alt"></i> XSUAA Security
+            </button>
+        </div>
+
+        <!-- Kubernetes Tab Content -->
+        <div id="kubernetes-tab" class="tab-content active">
+            <!-- Progress Flow -->
+            <div class="progress-flow">
+            <div class="flow-steps">
+                <div class="flow-step">
+                    <div class="step-circle neural" id="step1">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <div class="step-label">Neural Generation</div>
+                    <div class="step-description">LLM creates K8s manifests</div>
+                    <div class="flow-connector"></div>
+                </div>
+                <div class="flow-step">
+                    <div class="step-circle symbolic" id="step2">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="step-label">Symbolic Validation</div>
+                    <div class="step-description">Policy engine checks compliance</div>
+                    <div class="flow-connector"></div>
+                </div>
+                <div class="flow-step">
+                    <div class="step-circle neural" id="step3">
+                        <i class="fas fa-magic"></i>
+                    </div>
+                    <div class="step-label">Neural Repair</div>
+                    <div class="step-description">LLM fixes violations</div>
+                    <div class="flow-connector"></div>
+                </div>
+                <div class="flow-step">
+                    <div class="step-circle complete" id="step4">
+                        <i class="fas fa-check"></i>
+                    </div>
+                    <div class="step-label">Compliant Result</div>
+                    <div class="step-description">Policy-aligned manifest</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Interface -->
+        <div class="main-grid" id="mainInterface">
+            <!-- Neural Panel -->
+            <div class="panel neural-panel">
+                <div class="panel-header">
+                    <i class="fas fa-brain" style="color: var(--neural-color);"></i>
+                    <div class="panel-title">Neural Generation</div>
+                </div>
+
+                <div class="input-section">
+                    <label class="input-label">Deployment Requirements</label>
+                    <textarea 
+                        class="requirement-input" 
+                        id="requirementInput"
+                        placeholder="Describe your SAP service deployment:
+
+Example: 'Deploy a high-availability CAP service in eu-west-1 with horizontal scaling and access to S/4 backend. Needs Redis cache and should be cost-optimized for development environment.'"
+                    ></textarea>
+                    
+                    <div class="action-buttons">
+                        <button class="btn btn-primary" id="generateBtn" onclick="generateManifest()">
+                            <i class="fas fa-magic"></i>
+                            Generate K8s Manifest
+                        </button>
+                        <button class="btn btn-primary" id="generateRegoBtn" onclick="generateWithRegoLoop()" style="background: linear-gradient(135deg, var(--symbolic-color), var(--neural-color));">
+                            <i class="fas fa-sync-alt"></i>
+                            Generate with Rego Loop
+                        </button>
+                        <button class="btn btn-primary" id="simpleGenBtn" onclick="simpleGenerate()" style="background: linear-gradient(135deg, var(--sap-green), var(--sap-blue));">
+                            <i class="fas fa-bolt"></i>
+                            Simple Test
+                        </button>
+                        <button class="btn btn-secondary" onclick="loadExample()">
+                            <i class="fas fa-lightbulb"></i>
+                            Load Example
+                        </button>
+                    </div>
+                </div>
+
+                <div class="error-message" id="errorMessage"></div>
+
+                <div id="generatedManifest" style="display: none;">
+                    <div class="status-indicator status-generating" id="generationStatus">
+                        <i class="fas fa-cog fa-spin"></i>
+                        Generating manifest...
+                    </div>
+                    <div class="yaml-container">
+                        <div class="yaml-header">
+                            <span>Generated Kubernetes Manifest</span>
+                            <button class="btn-copy" onclick="copyGeneratedYaml()" style="background: none; border: 1px solid #666; color: #ccc; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <div class="yaml-content">
+                            <pre><code class="language-yaml" id="generatedYaml"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Symbolic Panel -->
+            <div class="panel symbolic-panel">
+                <div class="panel-header">
+                    <i class="fas fa-shield-alt" style="color: var(--symbolic-color);"></i>
+                    <div class="panel-title">Policy Validation</div>
+                    <div class="rego-badge" id="regoBadge" style="display: none; background: var(--symbolic-color); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem; margin-left: auto;">
+                        <i class="fas fa-code"></i> Rego
+                    </div>
+                </div>
+
+                <div class="policy-rules">
+                    <h4 style="margin-bottom: 1rem; color: var(--text-dark);">
+                        <i class="fas fa-list-check"></i> SAP K8s Policies
+                    </h4>
+                    <div class="policy-rule">
+                        <div class="rule-status pass" id="rule1"><i class="fas fa-check"></i></div>
+                        <div class="rule-text">Production services must have resource limits</div>
+                    </div>
+                    <div class="policy-rule">
+                        <div class="rule-status pass" id="rule2"><i class="fas fa-check"></i></div>
+                        <div class="rule-text">EU region requires data-residency label</div>
+                    </div>
+                    <div class="policy-rule">
+                        <div class="rule-status pass" id="rule3"><i class="fas fa-check"></i></div>
+                        <div class="rule-text">High-availability needs multiple replicas</div>
+                    </div>
+                    <div class="policy-rule">
+                        <div class="rule-status pass" id="rule4"><i class="fas fa-check"></i></div>
+                        <div class="rule-text">Services must have audit logging sidecar</div>
+                    </div>
+                    <div class="policy-rule">
+                        <div class="rule-status pass" id="rule5"><i class="fas fa-check"></i></div>
+                        <div class="rule-text">No elevated privileges without approval</div>
+                    </div>
+                </div>
+
+                <div id="policyViolations" style="display: none;">
+                    <div class="status-indicator status-violations">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Policy violations detected
+                    </div>
+                    <div class="policy-violations" id="violationsList">
+                        <!-- Violations will be inserted here -->
+                    </div>
+                </div>
+
+                <div id="complianceStatus" style="display: none;">
+                    <div class="status-indicator status-compliant">
+                        <i class="fas fa-check-circle"></i>
+                        All policies satisfied
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <div class="final-manifest">
+                <div class="manifest-header">
+                    <div class="manifest-title">
+                        <i class="fas fa-file-code"></i>
+                        Final Manifest
+                    </div>
+                    <div class="compliance-badge">
+                        <i class="fas fa-shield-check"></i>
+                        Policy Compliant
+                    </div>
+                </div>
+
+                <div class="ai-explanation">
+                    <div class="explanation-title">
+                        <i class="fas fa-robot"></i>
+                        AI Explanation
+                    </div>
+                    <div class="explanation-text" id="aiExplanation">
+                        The AI explanation will appear here after processing...
+                    </div>
+                </div>
+
+                <div class="yaml-container">
+                    <div class="yaml-header">
+                        <span>Policy-Compliant Kubernetes Manifest</span>
+                        <button class="btn-copy" onclick="copyFinalYaml()" style="background: none; border: 1px solid #666; color: #ccc; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.8rem;">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                    <div class="yaml-content">
+                        <pre><code class="language-yaml" id="finalYaml"></code></pre>
+                    </div>
+                </div>
+
+                <div class="download-actions">
+                    <button class="btn btn-download" onclick="downloadManifest()">
+                        <i class="fas fa-download"></i>
+                        Download YAML
+                    </button>
+                    <button class="btn btn-copy" onclick="copyManifest()">
+                        <i class="fas fa-copy"></i>
+                        Copy to Clipboard
+                    </button>
+                    <button class="btn btn-secondary" onclick="deployToCluster()">
+                        <i class="fas fa-rocket"></i>
+                        Deploy to Cluster
+                    </button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <i class="fas fa-check-circle" style="color: var(--sap-green);"></i>
+                    <div class="panel-title">Validation Summary</div>
+                </div>
+
+                <div style="text-align: center; padding: 1rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <div style="font-size: 1.5rem; font-weight: bold; color: var(--sap-green);" id="complianceScore">100%</div>
+                    <div style="font-size: 0.9rem; color: var(--text-gray);">Policy Compliance</div>
+                </div>
+
+                <div>
+                    <h4 style="margin-bottom: 1rem; color: var(--text-dark);">
+                        <i class="fas fa-info-circle"></i> Validation Status
+                    </h4>
+                    <div id="deploymentSummary" style="color: var(--text-gray); line-height: 1.6;">
+                        Policy validation pending...
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- End Kubernetes Tab -->
+
+        <!-- XSUAA Tab Content -->
+        <div id="xsuaa-tab" class="tab-content">
+            <h1 style="color: red; font-size: 2rem; padding: 2rem;">🧠🛡️ XSUAA Neuro-Symbolic Policy Engine</h1>
+            
+            <div style="padding: 2rem; background: white; margin: 1rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <h2>XSUAA Policy Configuration</h2>
+                <textarea 
+                    id="xsuaaPolicyInput"
+                    style="width: 100%; height: 200px; margin: 1rem 0; padding: 1rem; border: 1px solid #ddd; border-radius: 4px;"
+                    placeholder="Paste your xs-security.json here"
+                ></textarea>
+                
+                <button onclick="loadXsuaaExample()" style="padding: 0.5rem 1rem; margin-right: 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Load Example Policy
+                </button>
+            </div>
+
+            <div style="padding: 2rem; background: white; margin: 1rem; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                <h2>🧠🛡️ Natural Language Access Query</h2>
+                <input 
+                    type="text" 
+                    id="accessQueryInput"
+                    style="width: 100%; padding: 1rem; margin: 1rem 0; border: 1px solid #ddd; border-radius: 4px;"
+                    placeholder="Ask: 'Can user john.doe access the payments API?'"
+                />
+                
+                <button onclick="evaluateAccess()" id="evaluateAccessBtn" style="padding: 0.5rem 1rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    🧠🛡️ Evaluate Access
+                </button>
+                
+                <div id="accessResults" style="display: none; margin-top: 2rem; padding: 1rem; background: #f8f9fa; border-radius: 4px;">
+                    <h3>Results:</h3>
+                    <div id="logicalQuery"></div>
+                    <div id="policyDecision"></div>
+                </div>
+            </div>
+            
+            <div id="xsuaaErrorMessage" style="color: red; padding: 1rem;"></div>
+                <!-- XSUAA Policy Upload Panel -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <i class="fas fa-shield-alt" style="color: var(--sap-blue);"></i>
+                        <div class="panel-title">XSUAA Policy Configuration</div>
+                    </div>
+
+                    <div class="input-section">
+                        <label class="input-label">xs-security.json Configuration</label>
+                        <textarea 
+                            class="requirement-input" 
+                            id="xsuaaPolicyInput"
+                            placeholder='Paste your xs-security.json here:
+
+Example:
+{
+  "scopes": [
+    {"name": "read_invoices"},
+    {"name": "write_invoices"}, 
+    {"name": "approve_payments"},
+    {"name": "delete_invoices"}
+  ],
+  "role-templates": [
+    {
+      "name": "FinanceManager",
+      "scope-references": ["read_invoices", "write_invoices", "approve_payments"]
+    },
+    {
+      "name": "Accountant", 
+      "scope-references": ["read_invoices", "write_invoices"]
+    },
+    {
+      "name": "Auditor",
+      "scope-references": ["read_invoices"]
+    }
+  ]
+}'
+                            style="height: 200px;"
+                        ></textarea>
+                        
+                        <div class="action-buttons">
+                            <button class="btn btn-secondary" onclick="loadXsuaaExample()">
+                                <i class="fas fa-lightbulb"></i>
+                                Load Example Policy
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="error-message" id="xsuaaErrorMessage"></div>
+                </div>
+
+                <!-- Natural Language Access Query Panel -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <i class="fas fa-brain" style="color: var(--neural-color);"></i>
+                        <i class="fas fa-shield-alt" style="color: var(--symbolic-color); margin-left: 0.5rem;"></i>
+                        <div class="panel-title">Neuro-Symbolic Access Evaluation</div>
+                    </div>
+
+                    <div class="input-section">
+                        <label class="input-label">Natural Language Query</label>
+                        <input 
+                            type="text" 
+                            class="requirement-input" 
+                            id="accessQueryInput"
+                            placeholder="Ask access questions like: 'Can user john.doe access the payments API?', 'Is alice allowed to delete invoices?', 'What can a FinanceManager do?'"
+                            style="padding: 1rem; font-size: 1rem;"
+                        />
+                        
+                        <div class="action-buttons">
+                            <button class="btn btn-primary" onclick="evaluateAccess()" id="evaluateAccessBtn">
+                                <i class="fas fa-brain"></i>
+                                <i class="fas fa-shield-alt" style="margin-left: 0.25rem;"></i>
+                                Evaluate Access
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Access Evaluation Results -->
+                    <div id="accessResults" style="display: none; margin-top: 2rem;">
+                        <div class="panel-header">
+                            <i class="fas fa-chart-line" style="color: var(--symbolic-color);"></i>
+                            <div class="panel-title">Evaluation Results</div>
+                        </div>
+                        
+                        <!-- Neural Translation -->
+                        <div class="evaluation-step">
+                            <div class="step-header">
+                                <i class="fas fa-brain" style="color: var(--neural-color);"></i>
+                                <span>Neural Translation</span>
+                            </div>
+                            <div class="logical-query" id="logicalQuery">
+                                <!-- Logical query will be displayed here -->
+                            </div>
+                        </div>
+
+                        <!-- Symbolic Decision -->
+                        <div class="evaluation-step">
+                            <div class="step-header">
+                                <i class="fas fa-shield-alt" style="color: var(--symbolic-color);"></i>
+                                <span>Policy Evaluation</span>
+                            </div>
+                            <div class="policy-decision" id="policyDecision">
+                                <!-- Policy decision will be displayed here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+        </div>
+        <!-- End XSUAA Tab -->
+
+    </div>
+
+    <script>
+        // WebSocket connection
+        const socket = io();
+        
+        let currentStep = 1;
+        let manifestData = null;
+        let xsuaaData = null;
+        let currentViolations = [];
+
+        // Socket event handlers
+        socket.on('connect', function() {
+            console.log('Connected to server');
+            updateConnectionStatus(true);
+        });
+
+        socket.on('disconnect', function() {
+            console.log('Disconnected from server');
+            updateConnectionStatus(false);
+        });
+
+        socket.on('connected', function(data) {
+            console.log('Server confirmed connection:', data);
+        });
+
+        socket.on('generation_progress', function(data) {
+            console.log('Progress update:', data);
+            
+            // Update UI based on progress step
+            if (data.step === 'generator_verifier_generate') {
+                activateStep(1);
+                updateGenerationStatus(data.message, 'generating');
+            } else if (data.step === 'generator_verifier_validate') {
+                activateStep(2);  
+                updateGenerationStatus(data.message, 'validating');
+                // Show generated YAML immediately after validation
+                document.getElementById('generatedManifest').style.display = 'block';
+            } else if (data.step === 'generator_verifier_repair') {
+                activateStep(3);
+                updateGenerationStatus(data.message, 'repairing'); 
+            } else if (data.step === 'generator_verifier_complete') {
+                activateStep(4);
+                updateGenerationStatus(data.message, 'complete');
+            }
+        });
+
+        socket.on('validation_error', function(data) {
+            console.error('Validation error:', data);
+            showError(`Validation failed: ${data.error}`);
+            resetSteps();
+        });
+
+        socket.on('repair_error', function(data) {
+            console.error('Repair error:', data);
+            if (data.type === 'yaml_error') {
+                showError(`YAML Error: ${data.error}. The AI generated invalid YAML format. Please try again with clearer requirements.`);
+            } else {
+                showError(`Repair failed: ${data.error}. Please try regenerating the manifest.`);
+            }
+            resetSteps();
+        });
+
+        socket.on('generator_verifier_error', function(data) {
+            console.error('Generator-Verifier error:', data);
+            showError(`Generator-Verifier loop failed: ${data.error}`);
+            resetSteps();
+        });
+
+        socket.on('validation_violations', function(data) {
+            console.log('Validation violations received:', data);
+            
+            // Show the generated manifest
+            document.getElementById('generatedYaml').textContent = data.manifest;
+            if (window.Prism) {
+                Prism.highlightAll();
+            }
+            
+            // Show violations immediately
+            showRegoViolations(data.violations);
+            document.getElementById('regoBadge').style.display = 'block';
+        });
+
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connectionStatus');
+            if (connected) {
+                statusEl.className = 'status-indicator status-connected';
+                statusEl.innerHTML = '<i class="fas fa-circle"></i><span>Connected</span>';
+            } else {
+                statusEl.className = 'status-indicator status-disconnected';
+                statusEl.innerHTML = '<i class="fas fa-circle"></i><span>Disconnected</span>';
+            }
+        }
+
+        // Load example deployment requirements
+        function loadExample() {
+            document.getElementById('requirementInput').value = 
+                `Deploy a high-availability CAP service for customer onboarding in eu-west-1 region:
+
+• Service name: "customer-onboarding-api"  
+• Environment: production
+• Scaling: 3-10 replicas based on CPU usage
+• Resources: 2 CPU cores, 4GB RAM per pod
+• Storage: Needs access to PostgreSQL database
+• Networking: Internal service mesh communication
+• Compliance: Must meet SAP data residency requirements
+• Monitoring: Include Prometheus metrics and audit logging
+• Security: No elevated privileges, scan for vulnerabilities`;
+        }
+
+        // Simple Generate for Testing
+        async function simpleGenerate() {
+            const requirements = document.getElementById('requirementInput').value.trim();
+            
+            if (!requirements) {
+                showError('Please enter deployment requirements first');
+                return;
+            }
+
+            // Reset UI state
+            resetSteps();
+            activateStep(1);
+            
+            // Show generation status
+            document.getElementById('generatedManifest').style.display = 'block';
+            updateGenerationStatus('Simple generation with Rego validation...', 'generating');
+            
+            // Disable buttons
+            const btn = document.getElementById('simpleGenBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+            try {
+                const response = await fetch('/api/simple_generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        requirements: requirements
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to generate manifest');
+                }
+
+                // Show generated manifest
+                manifestData = data;
+                document.getElementById('generatedYaml').textContent = data.manifest;
+                if (window.Prism) {
+                    Prism.highlightAll();
+                }
+                
+                updateGenerationStatus('Simple generation completed', 'complete');
+                activateStep(2);
+                
+                // Show Rego badge
+                document.getElementById('regoBadge').style.display = 'block';
+                
+                if (data.isCompliant) {
+                    activateStep(4);
+                    showCompliantRegoResult(data);
+                } else {
+                    showRegoViolations(data.violations);
+                    setTimeout(() => {
+                        activateStep(4);
+                        showRegoResults(data);
+                    }, 2000);
+                }
+
+            } catch (error) {
+                console.error('Simple generation error:', error);
+                showError(`Simple generation failed: ${error.message}`);
+                updateGenerationStatus('Simple generation failed', 'error');
+            } finally {
+                // Re-enable button
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-bolt"></i> Simple Test';
+            }
+        }
+
+        // Generate with Rego Generator-Verifier Loop
+        async function generateWithRegoLoop() {
+            const requirements = document.getElementById('requirementInput').value.trim();
+            
+            if (!requirements) {
+                showError('Please enter deployment requirements first');
+                return;
+            }
+
+            // Reset UI state
+            resetSteps();
+            activateStep(1);
+            
+            // Show generation status
+            document.getElementById('generatedManifest').style.display = 'block';
+            updateGenerationStatus('Starting Generator-Verifier loop with Rego...', 'generating');
+            
+            // Disable buttons
+            const btn = document.getElementById('generateRegoBtn');
+            const btn2 = document.getElementById('generateBtn');
+            const btn3 = document.getElementById('simpleGenBtn');
+            btn.disabled = true;
+            btn2.disabled = true;
+            btn3.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating with Rego...';
+
+            try {
+                const response = await fetch('/api/generate_with_rego_loop', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        requirements: requirements
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to generate manifest with Rego loop');
+                }
+
+                // Show generated manifest
+                manifestData = data;
+                console.log('Rego Loop - Manifest data received:', data);
+                
+                // Update generated YAML display
+                const generatedYamlEl = document.getElementById('generatedYaml');
+                generatedYamlEl.textContent = data.manifest || 'No manifest generated';
+                
+                if (window.Prism) {
+                    Prism.highlightAll();
+                }
+                
+                updateGenerationStatus('Rego-validated manifest generated successfully', 'complete');
+                
+                // Show Rego badge
+                document.getElementById('regoBadge').style.display = 'block';
+                
+                // Move through the steps
+                activateStep(2); // Validation step
+                
+                // Show final results directly since generator-verifier handles the full loop
+                if (data.isCompliant) {
+                    setTimeout(() => {
+                        activateStep(4);
+                        showCompliantRegoResult(data);
+                    }, 1000);
+                } else {
+                    setTimeout(() => {
+                        activateStep(3);
+                        showRegoViolations(data.violations);
+                        // Show final results even with violations
+                        setTimeout(() => {
+                            activateStep(4);
+                            showRegoResults(data);
+                        }, 2000);
+                    }, 1000);
+                }
+
+            } catch (error) {
+                console.error('Rego generation error:', error);
+                showError(`Rego generation failed: ${error.message}`);
+                updateGenerationStatus('Rego generation failed', 'error');
+            } finally {
+                // Re-enable buttons
+                btn.disabled = false;
+                btn2.disabled = false;
+                btn3.disabled = false;
+                btn.innerHTML = '<i class="fas fa-sync-alt"></i> Generate with Rego Loop';
+            }
+        }
+
+        // Generate Kubernetes manifest
+        async function generateManifest() {
+            const requirements = document.getElementById('requirementInput').value.trim();
+            
+            if (!requirements) {
+                showError('Please enter deployment requirements first');
+                return;
+            }
+
+            // Reset UI state
+            resetSteps();
+            activateStep(1);
+            
+            // Show generation status
+            document.getElementById('generatedManifest').style.display = 'block';
+            updateGenerationStatus('Analyzing requirements with Neural AI...', 'generating');
+            
+            // Disable button
+            const btn = document.getElementById('generateBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+            try {
+                const response = await fetch('/api/generate_manifest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        requirements: requirements
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to generate manifest');
+                }
+
+                // Show generated manifest
+                manifestData = data;
+                document.getElementById('generatedYaml').textContent = data.manifest;
+                if (window.Prism) {
+                    Prism.highlightAll();
+                }
+                
+                updateGenerationStatus('Manifest generated successfully', 'complete');
+                
+                // Move to validation step
+                setTimeout(() => {
+                    activateStep(2);
+                    validateManifest(data.manifest);
+                }, 1000);
+
+            } catch (error) {
+                console.error('Generation error:', error);
+                showError(`Generation failed: ${error.message}`);
+                updateGenerationStatus('Generation failed', 'error');
+            } finally {
+                // Re-enable button
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-magic"></i> Generate K8s Manifest';
+            }
+        }
+
+        // Validate manifest against policies
+        async function validateManifest(manifest) {
+            updateValidationStatus('Symbolic policy validation in progress...', 'validating');
+
+            try {
+                const response = await fetch('/api/validate_manifest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        manifest: manifest
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Validation failed');
+                }
+                
+                if (data.violations && data.violations.length > 0) {
+                    // Show violations
+                    activateStep(3); // Move to repair step
+                    showPolicyViolations(data.violations);
+                    
+                    // Automatically trigger repair after showing violations
+                    setTimeout(() => {
+                        repairManifest(manifest, data.violations);
+                    }, 3000); // Give user time to see violations
+                } else {
+                    // Manifest is compliant
+                    showCompliantResult();
+                    activateStep(4);
+                }
+
+            } catch (error) {
+                console.error('Validation error:', error);
+                showError(`Validation failed: ${error.message}`);
+                resetSteps();
+            }
+        }
+
+        // Repair manifest violations
+        async function repairManifest(manifest, violations) {
+            updateValidationStatus('Neural AI repairing policy violations...', 'repairing');
+
+            try {
+                const response = await fetch('/api/repair_manifest', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        manifest: manifest,
+                        violations: violations,
+                        requirements: document.getElementById('requirementInput').value
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    if (data.type === 'yaml_error') {
+                        throw new Error(`YAML Format Error: ${data.error}\n\nSuggestion: ${data.suggestion}`);
+                    } else {
+                        throw new Error(data.error || 'Repair failed');
+                    }
+                }
+                
+                // Show final results
+                showFinalResults(data);
+                activateStep(4);
+
+            } catch (error) {
+                console.error('Repair error:', error);
+                showError(`Repair failed: ${error.message}`);
+                resetStepsWithDelay();
+            }
+        }
+
+        // UI Helper Functions
+        function activateStep(step) {
+            // Reset all steps
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`step${i}`).classList.remove('active');
+            }
+            
+            // Activate current step
+            document.getElementById(`step${step}`).classList.add('active');
+            currentStep = step;
+        }
+
+        function resetSteps() {
+            for (let i = 1; i <= 4; i++) {
+                const step = document.getElementById(`step${i}`);
+                step.classList.remove('active', 'complete');
+            }
+            document.getElementById('resultsSection').classList.remove('show');
+            document.getElementById('policyViolations').style.display = 'none';
+            document.getElementById('complianceStatus').style.display = 'none';
+            document.getElementById('regoBadge').style.display = 'none';
+            
+            // Clear generated YAML display
+            document.getElementById('generatedManifest').style.display = 'none';
+            document.getElementById('generatedYaml').textContent = '';
+            
+            // Hide validation status if it exists
+            const validationStatus = document.getElementById('validationStatus');
+            if (validationStatus) {
+                validationStatus.style.display = 'none';
+            }
+            
+            // Hide any error messages
+            hideError();
+        }
+
+        function updateGenerationStatus(message, type) {
+            const status = document.getElementById('generationStatus');
+            status.innerHTML = `<i class="fas ${getStatusIcon(type)}"></i> ${message}`;
+            status.className = `status-indicator status-${type}`;
+        }
+
+        function updateValidationStatus(message, type) {
+            // Create or update validation status display
+            let statusEl = document.getElementById('validationStatus');
+            if (!statusEl) {
+                statusEl = document.createElement('div');
+                statusEl.id = 'validationStatus';
+                statusEl.className = 'status-indicator';
+                
+                // Insert before policy violations section
+                const policySection = document.getElementById('policyViolations');
+                policySection.parentNode.insertBefore(statusEl, policySection);
+            }
+            
+            statusEl.innerHTML = `<i class="fas ${getStatusIcon(type)}"></i> ${message}`;
+            statusEl.className = `status-indicator status-${type}`;
+            statusEl.style.display = 'block';
+        }
+
+        function showPolicyViolations(violations) {
+            document.getElementById('policyViolations').style.display = 'block';
+            document.getElementById('complianceStatus').style.display = 'none';
+            
+            const violationsList = document.getElementById('violationsList');
+            violationsList.innerHTML = '';
+            
+            violations.forEach((violation, index) => {
+                const violationEl = document.createElement('div');
+                violationEl.className = 'violation-item';
+                violationEl.innerHTML = `
+                    <div class="violation-title">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        ${violation.title}
+                    </div>
+                    <div class="violation-description">${violation.description}</div>
+                `;
+                violationsList.appendChild(violationEl);
+                
+                // Update policy rule status
+                if (violation.ruleId) {
+                    updateRuleStatus(violation.ruleId, false);
+                }
+            });
+        }
+
+        function showCompliantResult() {
+            document.getElementById('policyViolations').style.display = 'none';
+            document.getElementById('complianceStatus').style.display = 'block';
+            
+            // Show results immediately for compliant manifests
+            document.getElementById('finalYaml').textContent = document.getElementById('generatedYaml').textContent;
+            document.getElementById('aiExplanation').textContent = 'The generated manifest meets all SAP Kubernetes policies and is ready for deployment.';
+            document.getElementById('resultsSection').classList.add('show');
+            
+            if (window.Prism) {
+                Prism.highlightAll();
+            }
+        }
+
+        function showFinalResults(data) {
+            document.getElementById('resultsSection').classList.add('show');
+            
+            // Handle the case where data might be an error
+            if (data.error) {
+                showError(`Final processing failed: ${data.error}`);
+                return;
+            }
+            
+            // Update final YAML with better formatting
+            const finalYamlEl = document.getElementById('finalYaml');
+            finalYamlEl.textContent = data.repairedManifest || 'No manifest data available';
+            
+            // Update AI explanation
+            const explanationEl = document.getElementById('aiExplanation');
+            explanationEl.textContent = data.explanation || 'Manifest has been processed successfully.';
+            
+            // Update insights with error handling
+            document.getElementById('resourceCost').textContent = data.estimatedCost || '$0.00';
+            document.getElementById('complianceScore').textContent = data.isCompliant ? '100%' : '95%';
+            document.getElementById('deploymentSummary').textContent = 
+                data.summary || 'Policy-compliant deployment ready for production.';
+            
+            // Highlight syntax
+            if (window.Prism) {
+                Prism.highlightAll();
+            }
+            
+            // Reset all policy rules to passing
+            for (let i = 1; i <= 5; i++) {
+                updateRuleStatus(i, true);
+            }
+            
+            // Hide any error messages on success
+            hideError();
+        }
+
+        function updateRuleStatus(ruleId, passing) {
+            const ruleEl = document.getElementById(`rule${ruleId}`);
+            if (ruleEl) {
+                ruleEl.className = `rule-status ${passing ? 'pass' : 'fail'}`;
+                ruleEl.innerHTML = `<i class="fas fa-${passing ? 'check' : 'times'}"></i>`;
+            }
+        }
+
+        function getStatusIcon(type) {
+            switch(type) {
+                case 'generating': return 'fa-cog fa-spin';
+                case 'validating': return 'fa-shield-alt fa-spin';
+                case 'repairing': return 'fa-magic fa-spin';
+                case 'complete': return 'fa-check-circle';
+                case 'error': return 'fa-exclamation-triangle';
+                default: return 'fa-info-circle';
+            }
+        }
+
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.innerHTML = `<strong>Error:</strong> ${message}`;
+            errorEl.style.display = 'block';
+            
+            // Auto-hide after 10 seconds for non-critical errors
+            setTimeout(() => {
+                hideError();
+            }, 10000);
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
+        }
+
+        function resetStepsWithDelay() {
+            // Allow user to read the error, then reset
+            setTimeout(() => {
+                resetSteps();
+            }, 5000);
+        }
+
+        // Action Functions
+        function copyGeneratedYaml() {
+            const content = document.getElementById('generatedYaml').textContent;
+            navigator.clipboard.writeText(content).then(() => {
+                // Show success feedback
+                const btn = event.target.closest('button');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                }, 2000);
+            }).catch(() => {
+                showError('Failed to copy to clipboard');
+            });
+        }
+
+        function copyFinalYaml() {
+            const content = document.getElementById('finalYaml').textContent;
+            navigator.clipboard.writeText(content).then(() => {
+                // Show success feedback
+                const btn = event.target.closest('button');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i>';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                }, 2000);
+            }).catch(() => {
+                showError('Failed to copy to clipboard');
+            });
+        }
+
+        function copyManifest() {
+            const content = document.getElementById('finalYaml').textContent;
+            navigator.clipboard.writeText(content).then(() => {
+                const button = event.target.closest('.action-button');
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                setTimeout(() => {
+                    button.innerHTML = originalText;
+                }, 2000);
+            }).catch(() => {
+                showError('Failed to copy to clipboard');
+            });
+        }
+
+        function downloadManifest() {
+            const content = document.getElementById('finalYaml').textContent;
+            const blob = new Blob([content], { type: 'text/yaml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'sap-k8s-manifest.yaml';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function showCompliantRegoResult(data) {
+            document.getElementById('policyViolations').style.display = 'none';
+            document.getElementById('complianceStatus').style.display = 'block';
+            
+            // Show results immediately for compliant manifests
+            document.getElementById('finalYaml').textContent = data.manifest;
+            document.getElementById('aiExplanation').textContent = data.explanation || 'The Rego-validated manifest meets all SAP Kubernetes policies and is ready for deployment.';
+            document.getElementById('complianceScore').textContent = '100%';
+            document.getElementById('deploymentSummary').textContent = 'Policy-compliant deployment ready for production.';
+            document.getElementById('resultsSection').classList.add('show');
+            
+            if (window.Prism) {
+                Prism.highlightAll();
+            }
+        }
+
+        function showRegoViolations(violations) {
+            document.getElementById('policyViolations').style.display = 'block';
+            document.getElementById('complianceStatus').style.display = 'none';
+            
+            const violationsList = document.getElementById('violationsList');
+            violationsList.innerHTML = '';
+            
+            violations.forEach((violation, index) => {
+                const violationEl = document.createElement('div');
+                violationEl.className = 'violation-item';
+                violationEl.innerHTML = `
+                    <div class="violation-title">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        ${violation.title} <span style="font-size: 0.8em; color: #666;">[Rego: ${violation.rule_id}]</span>
+                    </div>
+                    <div class="violation-description">${violation.description}</div>
+                `;
+                violationsList.appendChild(violationEl);
+                
+                // Update policy rule status
+                if (violation.rule_id) {
+                    updateRuleStatus(violation.rule_id, false);
+                }
+            });
+        }
+
+        function showRegoResults(data) {
+            document.getElementById('resultsSection').classList.add('show');
+            
+            // Update final YAML with better formatting
+            const finalYamlEl = document.getElementById('finalYaml');
+            finalYamlEl.textContent = data.manifest || 'No manifest data available';
+            
+            // Update AI explanation
+            const explanationEl = document.getElementById('aiExplanation');
+            explanationEl.textContent = data.explanation || 'Manifest processed with Rego-based Generator-Verifier loop.';
+            
+            // Update validation summary
+            document.getElementById('complianceScore').textContent = data.isCompliant ? '100%' : Math.round(data.complianceScore * 100) + '%';
+            document.getElementById('deploymentSummary').textContent = 
+                data.isCompliant ? 'All policies satisfied - deployment ready!' : `${data.violations?.length || 0} policy violations remaining.`;
+            
+            // Highlight syntax
+            if (window.Prism) {
+                Prism.highlightAll();
+            }
+            
+            // Hide any error messages on success
+            hideError();
+        }
+
+        function deployToCluster() {
+            alert('Integration with kubectl/ArgoCD deployment pipeline would go here!');
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // XSUAA Functions
+        // ─────────────────────────────────────────────────────────────
+
+        function switchTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabName + '-tab').classList.add('active');
+            
+            // Add active class to the clicked tab button
+            document.querySelector(`[onclick="switchTab('${tabName}')"]`).classList.add('active');
+        }
+
+        function loadXsuaaExample() {
+            document.getElementById('xsuaaPolicyInput').value = 
+                `{
+  "scopes": [
+    {"name": "read_invoices"},
+    {"name": "write_invoices"}, 
+    {"name": "approve_payments"},
+    {"name": "delete_invoices"},
+    {"name": "admin_users"}
+  ],
+  "role-templates": [
+    {
+      "name": "FinanceManager",
+      "scope-references": ["read_invoices", "write_invoices", "approve_payments"]
+    },
+    {
+      "name": "Accountant", 
+      "scope-references": ["read_invoices", "write_invoices"]
+    },
+    {
+      "name": "Auditor",
+      "scope-references": ["read_invoices"]
+    },
+    {
+      "name": "Administrator",
+      "scope-references": ["admin_users", "read_invoices", "write_invoices", "delete_invoices"]
+    }
+  ]
+}`;
+        }
+
+        async function evaluateAccess() {
+            const query = document.getElementById('accessQueryInput').value.trim();
+            const policyText = document.getElementById('xsuaaPolicyInput').value.trim();
+            
+            if (!query) {
+                showXsuaaError('Please enter a natural language query');
+                return;
+            }
+
+            if (!policyText) {
+                showXsuaaError('Please provide XSUAA policy configuration first');
+                return;
+            }
+
+            // Parse policy JSON
+            let xsSecurityPolicy;
+            try {
+                xsSecurityPolicy = JSON.parse(policyText);
+            } catch (e) {
+                showXsuaaError('Invalid JSON in policy configuration');
+                return;
+            }
+
+            const btn = document.getElementById('evaluateAccessBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Evaluating...';
+
+            try {
+                const response = await fetch('/api/evaluate_xsuaa_access', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        xs_security: xsSecurityPolicy
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Access evaluation failed');
+                }
+
+                // Show results
+                showAccessResults(data);
+
+            } catch (error) {
+                console.error('XSUAA evaluation error:', error);
+                showXsuaaError(`Evaluation failed: ${error.message}`);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-brain"></i><i class="fas fa-shield-alt" style="margin-left: 0.25rem;"></i> Evaluate Access';
+            }
+        }
+
+        function showAccessResults(data) {
+            // Show logical query
+            document.getElementById('logicalQuery').innerHTML = `
+                <div><strong>User:</strong> ${data.logical_query.user_id}</div>
+                <div><strong>Action:</strong> ${data.logical_query.action}</div>
+                <div><strong>Resource:</strong> ${data.logical_query.resource}</div>
+                ${Object.keys(data.logical_query.context).length > 0 ? 
+                    `<div><strong>Context:</strong> ${JSON.stringify(data.logical_query.context)}</div>` : ''}
+            `;
+
+            // Show policy decision
+            const decision = data.decision;
+            const decisionElement = document.getElementById('policyDecision');
+            decisionElement.className = `policy-decision ${decision.allowed ? 'allowed' : 'denied'}`;
+            
+            decisionElement.innerHTML = `
+                <div style="font-weight: 600; margin-bottom: 0.5rem;">
+                    ${decision.allowed ? '✅ ACCESS GRANTED' : '❌ ACCESS DENIED'}
+                </div>
+                <div style="margin-bottom: 1rem;">${decision.reason}</div>
+                <div class="decision-details">
+                    <div class="detail-item"><strong>Applicable Roles:</strong> ${decision.applicable_roles.join(', ') || 'None'}</div>
+                    <div class="detail-item"><strong>Applicable Scopes:</strong> ${decision.applicable_scopes.join(', ') || 'None'}</div>
+                    <div class="detail-item"><strong>Confidence:</strong> ${(decision.confidence * 100).toFixed(1)}%</div>
+                </div>
+            `;
+
+            // Show results section
+            document.getElementById('accessResults').style.display = 'block';
+        }
+
+
+
+        function showXsuaaError(message) {
+            const errorEl = document.getElementById('xsuaaErrorMessage');
+            errorEl.innerHTML = `<strong>Error:</strong> ${message}`;
+            errorEl.style.display = 'block';
+            
+            setTimeout(() => {
+                errorEl.style.display = 'none';
+            }, 10000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            resetSteps();
+        });
+    </script>
+</body>
+</html>

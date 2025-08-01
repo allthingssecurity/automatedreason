@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>12-Factor App + Cloud-Native Validator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; background: #f5f5f5; }
+        h1 { color: #0070f2; }
+        .artifact-section { background: white; padding: 2rem; margin: 1rem 0; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        textarea { width: 100%; min-height: 150px; margin: 0.5rem 0; padding: 1rem; border: 1px solid #ddd; border-radius: 4px; font-family: 'Monaco', 'Menlo', monospace; font-size: 0.9rem; }
+        button { padding: 0.75rem 1.5rem; margin: 0.5rem; background: #0070f2; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #005bb5; }
+        button.load-example { background: #28a745; }
+        button.load-example:hover { background: #218838; }
+        .results { margin-top: 2rem; }
+        .violation { background: #fff3cd; border: 1px solid #ffeaa7; padding: 1rem; margin: 0.5rem 0; border-radius: 4px; }
+        .violation.critical { background: #f8d7da; border-color: #f5c6cb; }
+        .violation.high { background: #fff3cd; border-color: #ffeaa7; }
+        .violation.medium { background: #d1ecf1; border-color: #bee5eb; }
+        .facts-section { background: #e8f4fd; padding: 1rem; margin: 1rem 0; border-radius: 4px; }
+        .fact { font-size: 0.9rem; margin: 0.25rem 0; }
+        .compliance-score { font-size: 1.5rem; font-weight: bold; padding: 1rem; text-align: center; border-radius: 8px; }
+        .compliance-score.good { background: #d4edda; color: #155724; }
+        .compliance-score.bad { background: #f8d7da; color: #721c24; }
+        .file-tabs { display: flex; margin-bottom: 1rem; }
+        .file-tab { padding: 0.5rem 1rem; margin-right: 0.5rem; background: #e9ecef; border: none; border-radius: 4px 4px 0 0; cursor: pointer; }
+        .file-tab.active { background: white; border-bottom: 2px solid #0070f2; }
+    </style>
+</head>
+<body>
+    <h1>🧠🛡️ 12-Factor App + Cloud-Native Architecture Validator</h1>
+    
+    <div class="artifact-section">
+        <h2>Application Artifacts</h2>
+        <p>Upload your SAP BTP application files for validation against 12-factor and cloud-native principles.</p>
+        
+        <div class="file-tabs">
+            <button class="file-tab active" onclick="showFileTab('mta')">mta.yaml</button>
+            <button class="file-tab" onclick="showFileTab('dockerfile')">Dockerfile</button>
+            <button class="file-tab" onclick="showFileTab('env')">.env</button>
+            <button class="file-tab" onclick="showFileTab('code')">app.js</button>
+        </div>
+        
+        <div id="mta-tab" class="file-content">
+            <label><strong>mta.yaml</strong> - Multi-Target Application descriptor</label>
+            <textarea id="mtaYaml" placeholder="Paste your mta.yaml content here..."></textarea>
+        </div>
+        
+        <div id="dockerfile-tab" class="file-content" style="display: none;">
+            <label><strong>Dockerfile</strong> - Container build instructions</label>
+            <textarea id="dockerfile" placeholder="Paste your Dockerfile content here..."></textarea>
+        </div>
+        
+        <div id="env-tab" class="file-content" style="display: none;">
+            <label><strong>.env</strong> - Environment configuration</label>
+            <textarea id="envFile" placeholder="Paste your .env file content here..."></textarea>
+        </div>
+        
+        <div id="code-tab" class="file-content" style="display: none;">
+            <label><strong>app.js</strong> - Application code</label>
+            <textarea id="codeFile" placeholder="Paste your JavaScript/TypeScript code here..."></textarea>
+        </div>
+        
+        <div style="margin-top: 1rem;">
+            <button class="load-example" onclick="loadCloudNativeExample()">📁 Load Example SAP BTP App</button>
+            <button onclick="validateCloudNative()">🧠🛡️ Validate Architecture</button>
+        </div>
+    </div>
+
+    <div id="results" class="results" style="display: none;">
+        <div id="complianceScore"></div>
+        
+        <div id="violations" style="margin-top: 2rem;">
+            <h3>🚨 Architecture Violations</h3>
+            <div id="violationsList"></div>
+        </div>
+        
+        <div id="facts" class="facts-section" style="margin-top: 2rem;">
+            <h3>🧠 Parsed Architecture Facts</h3>
+            <div id="factsList"></div>
+        </div>
+    </div>
+
+    <script>
+        function showFileTab(tabName) {
+            // Hide all file content divs
+            document.querySelectorAll('.file-content').forEach(div => {
+                div.style.display = 'none';
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.file-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + '-tab').style.display = 'block';
+            event.target.classList.add('active');
+        }
+
+        function loadCloudNativeExample() {
+            document.getElementById('mtaYaml').value = `_schema-version: "3.1"
+ID: invoice-app
+description: SAP BTP Invoice Management Application
+version: 1.0.0
+
+modules:
+  - name: srv
+    type: nodejs
+    path: srv
+    properties:
+      DATABASE_URL: "localhost:5432/invoices"  # Hardcoded config violation
+      API_SECRET: "mysecret123"  # Security violation
+    requires:
+      - name: hana-db
+      - name: destination-service
+    provides:
+      - name: srv-api
+        properties:
+          srv-url: \${default-url}
+
+  - name: app
+    type: html5
+    path: app
+    requires:
+      - name: srv-api
+
+resources:
+  - name: hana-db
+    type: com.sap.xs.hdi-container
+  - name: destination-service
+    type: destination`;
+
+            document.getElementById('dockerfile').value = `FROM node:18-alpine
+
+# Hardcoded secrets violation (Factor V)
+ENV API_KEY=secret123
+ENV DATABASE_PASSWORD=admin
+
+# Filesystem dependency violation (Factor VI)
+VOLUME /app/data
+RUN mkdir -p /app/logs
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+
+COPY . .
+
+EXPOSE 3000
+CMD ["npm", "start"]`;
+
+            document.getElementById('envFile').value = `# This file should not be in version control!
+DATABASE_URL=postgres://user:pass@localhost:5432/db
+API_SECRET=mysecretkey123
+PAYMENT_SERVICE_URL=https://payments.internal.com
+ADMIN_PASSWORD=admin123`;
+
+            document.getElementById('codeFile').value = `const express = require('express');
+const app = express();
+
+// Hardcoded configuration violation (Factor II)
+const config = {
+    database: 'postgres://localhost:5432/invoices',
+    apiSecret: 'hardcoded-secret',
+    paymentUrl: 'https://payments.example.com'
+};
+
+// Admin process mixed with app logic (Factor XII)
+if (process.argv.includes('--reset-db')) {
+    console.log('Resetting database...');
+    // Database reset logic here
+    process.exit(0);
+}
+
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok' });
+});
+
+app.listen(3000, () => {
+    console.log('Server running on port 3000');
+});`;
+        }
+
+        async function validateCloudNative() {
+            const artifacts = {
+                'mta.yaml': document.getElementById('mtaYaml').value,
+                'Dockerfile': document.getElementById('dockerfile').value,
+                '.env': document.getElementById('envFile').value,
+                'app.js': document.getElementById('codeFile').value
+            };
+
+            // Filter out empty artifacts
+            const filteredArtifacts = {};
+            for (const [key, value] of Object.entries(artifacts)) {
+                if (value.trim()) {
+                    filteredArtifacts[key] = value;
+                }
+            }
+
+            if (Object.keys(filteredArtifacts).length === 0) {
+                alert('Please provide at least one artifact to validate');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:9000/api/validate_cloud_native', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ artifacts: filteredArtifacts })
+                });
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Validation failed');
+                }
+
+                showResults(data);
+
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        function showResults(data) {
+            document.getElementById('results').style.display = 'block';
+
+            // Show compliance score
+            const score = Math.round(data.compliance_score * 100);
+            const scoreDiv = document.getElementById('complianceScore');
+            scoreDiv.className = `compliance-score ${score >= 80 ? 'good' : 'bad'}`;
+            scoreDiv.innerHTML = `
+                <div>Architecture Compliance Score: ${score}%</div>
+                <div style="font-size: 1rem; margin-top: 0.5rem;">
+                    ${data.violation_count} violations found in ${Object.keys(data.facts).length} analyzed facts
+                </div>
+            `;
+
+            // Show violations
+            const violationsList = document.getElementById('violationsList');
+            if (data.violations.length === 0) {
+                violationsList.innerHTML = '<div style="color: green; font-weight: bold;">✅ No violations found! Your application follows 12-factor and cloud-native principles.</div>';
+            } else {
+                violationsList.innerHTML = data.violations.map(v => `
+                    <div class="violation ${v.severity}">
+                        <div style="font-weight: bold; margin-bottom: 0.5rem;">
+                            🚨 Factor ${v.factor_number}: ${v.principle_name}
+                            <span style="float: right; background: rgba(0,0,0,0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-size: 0.8rem;">
+                                ${v.severity.toUpperCase()}
+                            </span>
+                        </div>
+                        <div style="margin-bottom: 0.5rem;"><strong>Issue:</strong> ${v.description}</div>
+                        <div style="margin-bottom: 0.5rem;"><strong>Details:</strong> ${v.violation_details}</div>
+                        <div style="margin-bottom: 0.5rem;"><strong>Impact:</strong> ${v.impact}</div>
+                        <div style="color: #0070f2;"><strong>Fix:</strong> ${v.suggested_fix}</div>
+                        <div style="font-size: 0.9rem; color: #666; margin-top: 0.5rem;">📁 ${v.file_path}</div>
+                    </div>
+                `).join('');
+            }
+
+            // Show parsed facts
+            const factsList = document.getElementById('factsList');
+            factsList.innerHTML = data.facts.map(f => `
+                <div class="fact">
+                    <strong>${f.fact_type}:</strong> ${f.entity}.${f.property} = ${JSON.stringify(f.value)} 
+                    <span style="color: #666;">(@${f.source_file})</span>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
