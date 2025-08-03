@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>12-Factor App Validation with Z3 SMT Solver</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #4c51bf 0%, #667eea 100%);
+            min-height: 100vh;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .section {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            color: #4a5568;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #4c51bf;
+            padding-bottom: 10px;
+        }
+
+        .architecture-flow {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr auto 1fr;
+            gap: 20px;
+            align-items: center;
+            margin: 30px 0;
+            padding: 20px;
+            background: #f7fafc;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .flow-box {
+            background: #4c51bf;
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .flow-arrow {
+            font-size: 2rem;
+            color: #4c51bf;
+            text-align: center;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin: 15px 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+
+        .z3-code {
+            background: #1a202c;
+            color: #fbb6ce;
+            border: 2px solid #ed64a6;
+        }
+
+        .python-code {
+            background: #2d3748;
+            color: #68d391;
+            border: 2px solid #48bb78;
+        }
+
+        .yaml-code {
+            background: #2a2e3a;
+            color: #ffd700;
+            border: 2px solid #f6e05e;
+        }
+
+        .factor-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .factor-card {
+            background: #f0fff4;
+            border: 2px solid #48bb78;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .factor-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #22543d;
+            margin-bottom: 10px;
+        }
+
+        .factor-description {
+            color: #2f855a;
+            margin-bottom: 15px;
+        }
+
+        .z3-constraint {
+            background: #fed7d7;
+            border: 1px solid #fc8181;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            color: #c53030;
+        }
+
+        .demo-section {
+            background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+            border: 3px solid #48bb78;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+
+        .demo-step {
+            background: white;
+            border: 2px solid #48bb78;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            position: relative;
+        }
+
+        .demo-step::before {
+            content: counter(demo-counter);
+            counter-increment: demo-counter;
+            position: absolute;
+            left: -15px;
+            top: -15px;
+            background: #48bb78;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .demo-section {
+            counter-reset: demo-counter;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, #4c51bf 0%, #667eea 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .violation-example {
+            background: #fed7d7;
+            border: 2px solid #fc8181;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .violation-title {
+            font-weight: 600;
+            color: #c53030;
+            margin-bottom: 5px;
+        }
+
+        .smt-model {
+            background: #e6fffa;
+            border: 2px solid #38b2ac;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .architecture-flow {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            
+            .flow-arrow {
+                transform: rotate(90deg);
+            }
+            
+            .factor-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .back-button {
+                position: relative;
+                top: 0;
+                left: 0;
+                margin-bottom: 20px;
+                display: inline-block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-button">← Back to Main Demo</a>
+    
+    <div class="container">
+        <div class="header">
+            <h1>🧠⚡ 12-Factor App Validation with Z3</h1>
+            <p>Neuro-Symbolic Architecture Compliance using SMT Solver</p>
+        </div>
+
+        <!-- Architecture Overview -->
+        <div class="section">
+            <h2 class="section-title">🏗️ Neuro-Symbolic Architecture for 12-Factor Apps</h2>
+            
+            <div class="highlight-box">
+                <strong>Key Innovation:</strong> Use Z3 SMT Solver to formally verify 12-factor app compliance<br/>
+                <em>Neural AI generates code artifacts → Z3 symbolic reasoning validates architecture</em>
+            </div>
+
+            <div class="architecture-flow">
+                <div class="flow-box">👤<br/>User Requirements</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-box">🧠<br/>LLM Generates<br/>Code Artifacts</div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-box">⚡<br/>Z3 SMT Solver<br/>Validates Architecture</div>
+            </div>
+
+            <p style="text-align: center; font-size: 1.1rem; color: #4a5568; margin-top: 20px;">
+                <strong>Generator-Verifier Loop:</strong> Iterates until all 12-factor principles are satisfied
+            </p>
+        </div>
+
+        <!-- 12-Factor Principles as Z3 Constraints -->
+        <div class="section">
+            <h2 class="section-title">📋 12-Factor Principles as Z3 Constraints</h2>
+            
+            <div class="factor-grid">
+                <div class="factor-card">
+                    <div class="factor-title">Factor II: Dependencies</div>
+                    <div class="factor-description">Explicitly declare and isolate dependencies</div>
+                    <div class="z3-constraint">
+has_package_json ∧ has_requirements_txt ∧ ¬hardcoded_dependencies
+                    </div>
+                </div>
+
+                <div class="factor-card">
+                    <div class="factor-title">Factor III: Config</div>
+                    <div class="factor-description">Store config in the environment</div>
+                    <div class="z3-constraint">
+∀ config ∈ app_configs: config.source = "environment" ∧ ¬config.hardcoded
+                    </div>
+                </div>
+
+                <div class="factor-card">
+                    <div class="factor-title">Factor V: Build/Release/Run</div>
+                    <div class="factor-description">Strictly separate build and run stages</div>
+                    <div class="z3-constraint">
+build_artifacts ∩ runtime_secrets = ∅ ∧ immutable_releases
+                    </div>
+                </div>
+
+                <div class="factor-card">
+                    <div class="factor-title">Factor VI: Processes</div>
+                    <div class="factor-description">Execute as stateless processes</div>
+                    <div class="z3-constraint">
+∀ process ∈ app_processes: ¬process.stores_state ∧ ¬process.sticky_sessions
+                    </div>
+                </div>
+
+                <div class="factor-card">
+                    <div class="factor-title">Factor XI: Logs</div>
+                    <div class="factor-description">Treat logs as event streams</div>
+                    <div class="z3-constraint">
+∀ log ∈ app_logs: log.destination = "stdout" ∧ ¬log.writes_to_file
+                    </div>
+                </div>
+
+                <div class="factor-card">
+                    <div class="factor-title">Factor XII: Admin Processes</div>
+                    <div class="factor-description">Run admin tasks as one-off processes</div>
+                    <div class="z3-constraint">
+admin_processes ∩ app_processes = ∅ ∧ one_off_execution
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Z3 Implementation Example -->
+        <div class="section">
+            <h2 class="section-title">⚡ Z3 SMT Solver Implementation</h2>
+            
+            <p><strong>Python Z3 Code for 12-Factor Validation:</strong></p>
+            <div class="code-block z3-code">import z3
+
+# Create Z3 solver instance
+solver = z3.Solver()
+
+# Define boolean variables for each architectural fact
+has_dockerfile = z3.Bool('has_dockerfile')
+has_env_vars = z3.Bool('has_env_vars')
+config_hardcoded = z3.Bool('config_hardcoded')
+stores_state = z3.Bool('stores_state')
+logs_to_file = z3.Bool('logs_to_file')
+admin_mixed = z3.Bool('admin_mixed')
+
+# Factor III: Configuration in environment
+# If app has config AND config is hardcoded, then violates Factor III
+violates_factor_iii = z3.Bool('violates_factor_iii')
+solver.add(violates_factor_iii == z3.And(has_env_vars, config_hardcoded))
+
+# Factor VI: Stateless processes
+# If app stores state, then violates Factor VI
+violates_factor_vi = z3.Bool('violates_factor_vi')
+solver.add(violates_factor_vi == stores_state)
+
+# Factor XI: Logs as streams
+# If app logs to files, then violates Factor XI
+violates_factor_xi = z3.Bool('violates_factor_xi')
+solver.add(violates_factor_xi == logs_to_file)
+
+# Factor XII: Admin processes separation
+# If admin processes mixed with app, then violates Factor XII
+violates_factor_xii = z3.Bool('violates_factor_xii')
+solver.add(violates_factor_xii == admin_mixed)
+
+# Overall compliance constraint
+app_compliant = z3.Bool('app_compliant')
+solver.add(app_compliant == z3.Not(z3.Or(
+    violates_factor_iii,
+    violates_factor_vi,
+    violates_factor_xi,
+    violates_factor_xii
+)))
+
+# Check satisfiability
+result = solver.check()
+if result == z3.sat:
+    model = solver.model()
+    print("Z3 Model:", model)
+else:
+    print("Constraints unsatisfiable")</div>
+        </div>
+
+        <!-- Demo: SAP Application Example -->
+        <div class="section">
+            <h2 class="section-title">🎯 Demo: SAP CAP Application Validation</h2>
+            
+            <div class="demo-section">
+                <div class="demo-step">
+                    <strong>User Requirement:</strong><br/>
+                    "Create a SAP CAP service with database connectivity, authentication, and logging"
+                </div>
+                
+                <div class="demo-step">
+                    <strong>LLM Generates Code Artifacts:</strong><br/>
+                    <div class="code-block python-code">// package.json
+{
+  "name": "sap-cap-service",
+  "dependencies": {
+    "@sap/cds": "^6.0.0",
+    "express": "^4.18.0"
+  },
+  "scripts": {
+    "start": "cds run"
+  }
+}
+
+// server.js
+const cds = require('@sap/cds')
+const express = require('express')
+
+// ❌ Hardcoded configuration (violates Factor III)
+const dbConfig = {
+  host: "localhost",
+  password: "admin123"
+}
+
+// ❌ File logging (violates Factor XI)
+const fs = require('fs')
+function logToFile(message) {
+  fs.appendFileSync('./app.log', message)
+}
+
+// ❌ Admin function mixed with app (violates Factor XII)
+function adminCleanup() {
+  // Admin logic here
+}
+
+cds.serve('all').in('app').to('express').at('/')
+</div>
+                </div>
+                
+                <div class="demo-step">
+                    <strong>Z3 Extracts Architectural Facts:</strong><br/>
+                    <div class="code-block z3-code"># Facts extracted from code analysis
+has_package_json = True
+has_env_vars = True
+config_hardcoded = True      # Found: dbConfig with hardcoded values
+stores_state = False         # No persistent state detected
+logs_to_file = True         # Found: fs.appendFileSync('./app.log')
+admin_mixed = True          # Found: adminCleanup() in main app</div>
+                </div>
+                
+                <div class="demo-step">
+                    <strong>Z3 SMT Solver Validation:</strong><br/>
+                    <div class="smt-model">Z3 Model Result:
+has_package_json = True
+config_hardcoded = True
+logs_to_file = True
+admin_mixed = True
+violates_factor_iii = True   # Config violation
+violates_factor_xi = True    # Logging violation  
+violates_factor_xii = True   # Admin process violation
+app_compliant = False        # ❌ NOT COMPLIANT</div>
+                    
+                    <div class="violation-example">
+                        <div class="violation-title">❌ Violations Found:</div>
+                        <ul>
+                            <li><strong>Factor III:</strong> Configuration hardcoded in source code</li>
+                            <li><strong>Factor XI:</strong> Logging to files instead of stdout</li>
+                            <li><strong>Factor XII:</strong> Admin processes mixed with application logic</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="demo-step">
+                    <strong>LLM Generates Compliant Code (After Z3 Feedback):</strong><br/>
+                    <div class="code-block python-code">// server.js (COMPLIANT VERSION)
+const cds = require('@sap/cds')
+
+// ✅ Configuration from environment (Factor III compliant)
+const dbConfig = {
+  host: process.env.DB_HOST,
+  password: process.env.DB_PASSWORD
+}
+
+// ✅ Logging to stdout (Factor XI compliant)
+function logMessage(message) {
+  console.log(JSON.stringify({
+    timestamp: new Date().toISOString(),
+    message: message
+  }))
+}
+
+// ✅ No admin logic mixed (Factor XII compliant)
+// Admin tasks moved to separate scripts/
+
+cds.serve('all').in('app').to('express').at('/')
+
+// admin/cleanup.js (SEPARATE FILE)
+// Admin processes as one-off scripts
+const cleanup = require('./cleanup-tasks')
+cleanup.run()</div>
+                </div>
+                
+                <div class="demo-step">
+                    <strong>Final Z3 Validation:</strong><br/>
+                    <div class="smt-model">Z3 Model Result (After Repair):
+config_hardcoded = False     # ✅ Using environment variables
+logs_to_file = False        # ✅ Logging to stdout
+admin_mixed = False         # ✅ Admin tasks separated
+violates_factor_iii = False
+violates_factor_xi = False
+violates_factor_xii = False
+app_compliant = True        # ✅ FULLY COMPLIANT!</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Benefits -->
+        <div class="section">
+            <h2 class="section-title">🎯 Benefits of Z3-Based Validation</h2>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                <div class="highlight-box" style="background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);">
+                    <strong>🔍 Formal Verification</strong><br/>
+                    Z3 provides mathematical proof of compliance, not just heuristics
+                </div>
+                
+                <div class="highlight-box" style="background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);">
+                    <strong>🔄 Constraint Satisfaction</strong><br/>
+                    SMT solver finds violations and can suggest repairs automatically
+                </div>
+                
+                <div class="highlight-box" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <strong>🧠 Neuro-Symbolic Synergy</strong><br/>
+                    LLM creativity + Z3 logical reasoning = robust architecture validation
+                </div>
+            </div>
+        </div>
+
+        <!-- Technical Implementation -->
+        <div class="section">
+            <h2 class="section-title">🔧 Technical Architecture</h2>
+            
+            <div style="background: #f7fafc; padding: 20px; border-radius: 10px; border-left: 5px solid #4c51bf;">
+                <h4>Components:</h4>
+                <ul style="margin-top: 10px;">
+                    <li><strong>Neural Parser:</strong> LLM extracts architectural facts from code</li>
+                    <li><strong>Z3 Encoder:</strong> Converts facts to SMT constraints</li>
+                    <li><strong>SMT Solver:</strong> Z3 validates 12-factor compliance</li>
+                    <li><strong>Repair Generator:</strong> LLM fixes violations based on Z3 feedback</li>
+                </ul>
+                
+                <h4 style="margin-top: 20px;">Validation Process:</h4>
+                <ol style="margin-top: 10px;">
+                    <li>🧠 <strong>Neural Analysis:</strong> LLM parses code artifacts</li>
+                    <li>⚡ <strong>Constraint Generation:</strong> Facts encoded as Z3 constraints</li>
+                    <li>🔍 <strong>SMT Solving:</strong> Z3 checks satisfiability</li>
+                    <li>🔧 <strong>Violation Repair:</strong> LLM generates compliant code</li>
+                    <li>🔄 <strong>Loop:</strong> Repeat until Z3 confirms compliance</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
