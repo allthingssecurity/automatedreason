@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demo 2: Neuro-Symbolic Policy Validation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .back-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            text-decoration: none;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .back-button:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .comparison-banner {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            color: white;
+            text-align: center;
+        }
+
+        .comparison-banner h2 {
+            margin-bottom: 10px;
+            color: #f0fff4;
+        }
+
+        .flow-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .flow-step {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            opacity: 0.3;
+            transition: all 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .flow-step.active {
+            opacity: 1;
+            transform: scale(1.02);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .flow-step.completed {
+            opacity: 0.8;
+            border-left: 5px solid #48bb78;
+        }
+
+        .flow-step.policy-step {
+            border: 2px solid #48bb78;
+            background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
+        }
+
+        .step-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .step-icon {
+            font-size: 2rem;
+            margin-right: 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .flow-step.active .step-icon {
+            transform: scale(1.2) rotate(5deg);
+        }
+
+        .step-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .step-content {
+            color: #718096;
+            line-height: 1.6;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin: 10px 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+
+        .policy-block {
+            background: #1a202c;
+            color: #68d391;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            margin: 10px 0;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            border: 2px solid #48bb78;
+        }
+
+        .violation-list {
+            background: #fed7d7;
+            border: 1px solid #fc8181;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 10px 0;
+        }
+
+        .violation-item {
+            margin-bottom: 10px;
+            padding: 8px;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #e53e3e;
+        }
+
+        .violation-title {
+            font-weight: 600;
+            color: #c53030;
+            margin-bottom: 5px;
+        }
+
+        .violation-desc {
+            font-size: 0.9rem;
+            color: #744210;
+        }
+
+        .neuro-symbolic-highlight {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .control-button {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+
+        .control-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(72, 187, 120, 0.4);
+        }
+
+        .control-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 3px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #48bb78, #38a169);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 3px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .success-message {
+            background: #c6f6d5;
+            border: 1px solid #68d391;
+            color: #22543d;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .flow-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 15px;
+            }
+            
+            .back-button {
+                position: relative;
+                top: 0;
+                left: 0;
+                margin-bottom: 20px;
+                display: inline-block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="index.html" class="back-button">← Back to Home</a>
+    
+    <div class="container">
+        <div class="header">
+            <h1>✅ Neuro-Symbolic Approach: Policy-Validated Generation</h1>
+            <p>Watch AI-generated configs get validated against formal Rego policies</p>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+        </div>
+
+        <div class="comparison-banner">
+            <h2>🧠 + 🛡️ = Robust Policy Validation</h2>
+            <p>Neural AI generates configurations → Symbolic Rego policies validate compliance → Generator-Verifier loop ensures production readiness</p>
+        </div>
+
+        <div class="flow-container">
+            <!-- Step 1: User Requirements -->
+            <div class="flow-step" id="step1">
+                <div class="step-header">
+                    <div class="step-icon">📝</div>
+                    <div class="step-title">1. User Requirements</div>
+                </div>
+                <div class="step-content">
+                    <p>User provides natural language requirements:</p>
+                    <div class="code-block" id="requirements">
+"Deploy a SAP CAP service with EU data residency, audit logging, and high availability for production"
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Formal Policies -->
+            <div class="flow-step policy-step" id="step2">
+                <div class="step-header">
+                    <div class="step-icon">🛡️</div>
+                    <div class="step-title">2. Formal Rego Policies</div>
+                </div>
+                <div class="step-content">
+                    <p>Pre-defined SAP production policies in Rego:</p>
+                    <div class="policy-block" id="regoPolicies">
+Loading Rego policies...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Neural Generation -->
+            <div class="flow-step" id="step3">
+                <div class="step-header">
+                    <div class="step-icon">🧠</div>
+                    <div class="step-title">3. Neural AI Generation</div>
+                </div>
+                <div class="step-content">
+                    <p>OpenAI GPT-4 generates initial manifest:</p>
+                    <div class="code-block" id="generatedManifest">
+Waiting for generation...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Policy Validation -->
+            <div class="flow-step policy-step" id="step4">
+                <div class="step-header">
+                    <div class="step-icon">⚖️</div>
+                    <div class="step-title">4. Symbolic Policy Validation</div>
+                </div>
+                <div class="step-content">
+                    <p>OPA/Rego validates against formal policies:</p>
+                    <div id="validationResult">
+Waiting for validation...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Neuro-Symbolic Repair -->
+            <div class="flow-step" id="step5">
+                <div class="step-header">
+                    <div class="step-icon">🔧</div>
+                    <div class="step-title">5. Neuro-Symbolic Repair</div>
+                </div>
+                <div class="step-content">
+                    <p>AI repairs violations using policy feedback:</p>
+                    <div class="neuro-symbolic-highlight">
+                        🧠 Neural AI + 🛡️ Symbolic Policies = Smart Repair
+                    </div>
+                    <div class="code-block" id="repairedManifest">
+Waiting for repair...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 6: Final Validation -->
+            <div class="flow-step policy-step" id="step6">
+                <div class="step-header">
+                    <div class="step-icon">✅</div>
+                    <div class="step-title">6. Policy Compliance Verified</div>
+                </div>
+                <div class="step-content">
+                    <p>Final validation ensures 100% policy compliance:</p>
+                    <div id="finalResult">
+Waiting for final validation...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="control-button" id="startBtn" onclick="startDemo()">
+                Start Neuro-Symbolic Demo
+            </button>
+            <button class="control-button" id="resetBtn" onclick="resetDemo()" disabled>
+                Reset Demo
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentStep = 0;
+        let isRunning = false;
+
+        const regoPolicies = `package sap.k8s.security
+
+# Resource limits policy
+deny contains msg if {
+    input.kind == "Deployment"
+    container := input.spec.template.spec.containers[_]
+    not container.resources.limits
+    msg := {
+        "rule_id": "resource-limits",
+        "title": "Missing Resource Limits",
+        "severity": "high"
+    }
+}
+
+# EU Data residency policy
+deny contains msg if {
+    input.kind in ["Deployment", "StatefulSet"]
+    labels := input.metadata.labels
+    labels.region
+    startswith(labels.region, "eu")
+    not labels["data-residency"]
+    msg := {
+        "rule_id": "data-residency",
+        "title": "Missing Data Residency Label",
+        "severity": "high"
+    }
+}`;
+
+        const initialManifest = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sap-cap-service
+  labels:
+    app: cap-service
+    region: eu-central-1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cap-service
+  template:
+    metadata:
+      labels:
+        app: cap-service
+    spec:
+      containers:
+      - name: cap-service
+        image: sap-cap:latest
+        ports:
+        - containerPort: 4004`;
+
+        const violations = [
+            {
+                title: "Missing Resource Limits",
+                description: "Containers must specify CPU and memory limits for production",
+                severity: "high",
+                rule: "resource-limits"
+            },
+            {
+                title: "Missing Data Residency Label",
+                description: "EU deployments must have data-residency label",
+                severity: "high",
+                rule: "data-residency"
+            },
+            {
+                title: "Insufficient Replicas for HA",
+                description: "Production deployments require at least 3 replicas",
+                severity: "medium",
+                rule: "high-availability"
+            },
+            {
+                title: "Missing Audit Logging Sidecar",
+                description: "SAP services must include audit logging sidecar",
+                severity: "high",
+                rule: "audit-logging"
+            }
+        ];
+
+        const repairedManifest = `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sap-cap-service
+  labels:
+    app: cap-service
+    version: "1.0"
+    team: platform
+    region: eu-central-1
+    data-residency: EU
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: cap-service
+  template:
+    metadata:
+      labels:
+        app: cap-service
+        version: "1.0"
+        team: platform
+        data-residency: EU
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+      containers:
+      - name: cap-service
+        image: sap-cap:latest
+        ports:
+        - containerPort: 4004
+        resources:
+          limits:
+            cpu: "2000m"
+            memory: "4Gi"
+          requests:
+            cpu: "1000m"
+            memory: "2Gi"
+        env:
+        - name: NODE_ENV
+          value: "production"
+      - name: audit-logger
+        image: sap-audit-logger:latest
+        resources:
+          limits:
+            cpu: "200m"
+            memory: "256Mi"`;
+
+        function updateProgress(percentage) {
+            document.getElementById('progressFill').style.width = percentage + '%';
+        }
+
+        function activateStep(stepNum) {
+            // Deactivate all steps
+            for (let i = 1; i <= 6; i++) {
+                const step = document.getElementById(`step${i}`);
+                step.classList.remove('active');
+                if (i < stepNum) {
+                    step.classList.add('completed');
+                } else {
+                    step.classList.remove('completed');
+                }
+            }
+            
+            // Activate current step
+            if (stepNum <= 6) {
+                document.getElementById(`step${stepNum}`).classList.add('active');
+            }
+        }
+
+        async function startDemo() {
+            if (isRunning) return;
+            
+            isRunning = true;
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('resetBtn').disabled = false;
+            
+            // Step 1: Show requirements
+            currentStep = 1;
+            activateStep(1);
+            updateProgress(16);
+            await sleep(2000);
+
+            // Step 2: Show Rego policies
+            currentStep = 2;
+            activateStep(2);
+            updateProgress(32);
+            
+            document.getElementById('regoPolicies').innerHTML = 
+                'Loading formal Rego policies...<span class="loading-spinner"></span>';
+            
+            await sleep(2000);
+            document.getElementById('regoPolicies').textContent = regoPolicies;
+            await sleep(2000);
+
+            // Step 3: Generate manifest
+            currentStep = 3;
+            activateStep(3);
+            updateProgress(48);
+            
+            document.getElementById('generatedManifest').innerHTML = 
+                'Neural AI generating manifest...<span class="loading-spinner"></span>';
+            
+            await sleep(3000);
+            document.getElementById('generatedManifest').textContent = initialManifest;
+            await sleep(2000);
+
+            // Step 4: Validate with Rego
+            currentStep = 4;
+            activateStep(4);
+            updateProgress(64);
+            
+            document.getElementById('validationResult').innerHTML = 
+                'Symbolic validation with OPA/Rego...<span class="loading-spinner"></span>';
+            
+            await sleep(2500);
+            
+            let violationHtml = '<div class="violation-list">';
+            violations.forEach(v => {
+                violationHtml += `
+                    <div class="violation-item">
+                        <div class="violation-title">❌ ${v.title}</div>
+                        <div class="violation-desc">${v.description} (Rule: ${v.rule})</div>
+                    </div>
+                `;
+            });
+            violationHtml += '</div>';
+            violationHtml += `<p><strong>Policy Compliance:</strong> 20% (4 violations found)</p>`;
+            
+            document.getElementById('validationResult').innerHTML = violationHtml;
+            await sleep(3000);
+
+            // Step 5: Neuro-Symbolic Repair
+            currentStep = 5;
+            activateStep(5);
+            updateProgress(80);
+            
+            document.getElementById('repairedManifest').innerHTML = 
+                'Neuro-Symbolic repair in progress...<span class="loading-spinner"></span>';
+            
+            await sleep(3500);
+            document.getElementById('repairedManifest').textContent = repairedManifest;
+            await sleep(2000);
+
+            // Step 6: Final validation
+            currentStep = 6;
+            activateStep(6);
+            updateProgress(100);
+            
+            document.getElementById('finalResult').innerHTML = 
+                'Final policy validation...<span class="loading-spinner"></span>';
+            
+            await sleep(2000);
+            document.getElementById('finalResult').innerHTML = 
+                '<div class="success-message">✅ 100% Policy Compliance Achieved!<br/>🛡️ All Rego policies satisfied<br/>🚀 Ready for production deployment</div>';
+            
+            isRunning = false;
+        }
+
+        function resetDemo() {
+            if (isRunning) return;
+            
+            currentStep = 0;
+            updateProgress(0);
+            
+            // Reset all steps
+            for (let i = 1; i <= 6; i++) {
+                const step = document.getElementById(`step${i}`);
+                step.classList.remove('active', 'completed');
+            }
+            
+            // Reset content
+            document.getElementById('regoPolicies').textContent = 'Loading Rego policies...';
+            document.getElementById('generatedManifest').textContent = 'Waiting for generation...';
+            document.getElementById('validationResult').textContent = 'Waiting for validation...';
+            document.getElementById('repairedManifest').textContent = 'Waiting for repair...';
+            document.getElementById('finalResult').textContent = 'Waiting for final validation...';
+            
+            // Reset buttons
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('resetBtn').disabled = true;
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Initialize
+        resetDemo();
+    </script>
+</body>
+</html>
