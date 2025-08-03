@@ -1,138 +1,125 @@
-# 🧠🛡️ Neuro-Symbolic Automated Reasoning for Cloud Security
+# Rego Policy Validation Flow - Interactive Demo
 
-A sophisticated neuro-symbolic AI system that combines Large Language Models (LLMs) with formal symbolic reasoning engines for automated cloud security policy validation.
+An interactive demonstration of Kubernetes policy validation using OPA/Rego and Neuro-Symbolic AI. This demo shows how LLMs generate Kubernetes manifests, how Rego policies validate them, and how the generator-verifier loop works to create compliant configurations.
 
-## 🚀 Features
+## 🚀 Live Demo
 
-### 1. **Kubernetes Policy Validation with Rego/OPA**
-- Neural AI generates Kubernetes manifests using OpenAI GPT
-- Symbolic validation using Open Policy Agent (OPA) with Rego policies
-- Generator-Verifier loop for iterative improvement and repair
-- Real-time WebSocket updates for UI feedback
+Visit the live demo: [Your GitHub Pages URL will be here]
 
-### 2. **XSUAA Security Analysis**
-- Static security analysis for SAP XSUAA (Identity service) policies
-- Natural language queries about access control and compliance
-- Neural translation of queries to logical representations
-- Symbolic evaluation against xs-security.json configurations
+## 🎯 Features
 
-### 3. **Real Cloud-Native 12-Factor App Validator**
-- **Actual** OpenAI LLM calls for parsing application artifacts
-- **Real** Microsoft Z3 SMT solver for constraint satisfaction
-- 12-Factor App principles encoded as Z3 boolean constraints
-- Validates SAP BTP applications against cloud-native best practices
+- **Interactive Tabbed Interface**: Switch between Basic and Enterprise scenarios
+- **Animated Flow Visualization**: Watch the 6-step validation process
+- **Real Policy Examples**: Based on actual SAP production policies
+- **Two Scenarios**:
+  - **Basic K8s Deployment**: Simple nginx deployment with common violations
+  - **SAP Enterprise Workload**: Complex CAP service with enterprise requirements
 
-## 🏗️ Architecture
+## 🛠️ Technology Stack
 
-![Neuro-Symbolic Architecture](neuro_symbolic.png)
+- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
+- **Policies**: OPA/Rego policy language
+- **AI**: OpenAI GPT-4 for manifest generation
+- **Deployment**: GitHub Pages
+- **Architecture**: Neuro-Symbolic AI approach
+
+## 📋 Demo Flow
+
+### 6-Step Validation Process
+
+1. **📝 User Requirements** - Natural language input
+2. **🧠 Neural AI Generation** - LLM generates K8s manifest
+3. **🛡️ Rego Policy Validation** - OPA validates against policies
+4. **🔧 Automated Repair** - AI fixes violations
+5. **✅ Final Validation** - Compliance verification
+6. **🚀 Production Ready** - Deployment-ready manifest
+
+## 🏗️ Local Development
+
+1. Clone this repository
+2. Open `index.html` in your browser
+3. No build process required - pure HTML/CSS/JS
+
+## 🌐 GitHub Pages Deployment
+
+### Option 1: Automatic Deployment
+
+1. Fork this repository
+2. Go to Settings → Pages
+3. Select "Deploy from a branch"
+4. Choose "main" branch and "/ (root)" folder
+5. Your demo will be available at `https://yourusername.github.io/repo-name`
+
+### Option 2: Manual Upload
+
+1. Download all files
+2. Create a new GitHub repository
+3. Upload files to the repository
+4. Enable GitHub Pages in repository settings
+
+## 📁 File Structure
 
 ```
-🧠 Neural Engine (LLM)     +     🛡️ Symbolic Engine (Formal Logic)
-├── OpenAI GPT-4o-mini           ├── Open Policy Agent (OPA/Rego)
-├── Manifest Generation          ├── Microsoft Z3 SMT Solver
-├── Fact Extraction              ├── Constraint Satisfaction
-└── Natural Language             └── Mathematical Proof
+├── index.html          # Main demo page with tabbed interface
+├── demo1.html          # Legacy single demo (optional)
+├── demo2.html          # Can be created for additional demos
+├── README.md           # This file
+└── policies/
+    └── opa/
+        └── sap-k8s-policies.rego  # Actual Rego policies used
 ```
 
-## 🛠️ Technical Stack
+## 🔧 Policy Examples
 
-- **Backend**: Python Flask with WebSocket support
-- **Neural AI**: OpenAI GPT-4o-mini API
-- **Symbolic Engines**: 
-  - OPA (Open Policy Agent) with Rego
-  - Microsoft Z3 SMT Solver
-- **Frontend**: HTML5/JavaScript with real-time updates
-- **Security**: XSUAA policy analysis, Kubernetes security validation
+The demo includes real SAP production policies:
 
-## 🔧 Setup
+- **Resource Limits**: Containers must specify CPU/memory limits
+- **Required Labels**: app, version, team labels mandatory
+- **High Availability**: Production deployments need 2+ replicas
+- **Security Context**: Containers must run as non-root
+- **Audit Logging**: Production services need audit sidecars
+- **Data Residency**: EU deployments need data-residency labels
+- **Network Policies**: Enterprise deployments need network policies
 
-1. **Install Dependencies**:
-   ```bash
-   pip install flask flask-socketio openai pyyaml z3-solver
-   ```
+## 🎨 Customization
 
-2. **Install OPA Binary**:
-   ```bash
-   # Download OPA binary to ~/bin/opa
-   # The app will automatically detect it
-   ```
+### Adding New Scenarios
 
-3. **Set OpenAI API Key**:
-   ```bash
-   export OPENAI_API_KEY="your-openai-api-key-here"
-   ```
+1. Edit the `demoData` object in `index.html`
+2. Add new tab in the navigation
+3. Define steps, manifests, violations, and repairs
 
-4. **Run Application**:
-   ```bash
-   python app.py
-   # Server starts on http://localhost:9000
-   ```
+### Modifying Policies
 
-## 🎯 Usage
+1. Update the violations arrays in the demo data
+2. Modify the Rego policies in `policies/opa/`
+3. Adjust the repair logic to match new policies
 
-### Kubernetes Policy Validation
-- Access: `http://localhost:9000/`
-- Upload K8s manifests for SAP-specific policy validation
-- Uses generator-verifier loop for automatic repairs
+## 🤝 Contributing
 
-### XSUAA Security Analysis  
-- Access: `http://localhost:9000/test_xsuaa`
-- Upload xs-security.json configurations
-- Ask natural language questions about access control
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test the demo locally
+5. Submit a pull request
 
-### Real Cloud-Native Validation
-- Access: `http://localhost:9000/test_real_cloud_native`
-- Upload application artifacts (mta.yaml, Dockerfile, etc.)
-- Get real LLM + Z3 SMT solver analysis
+## 📄 License
 
-## 📊 Example Results
+This project is open source and available under the MIT License.
 
-### Z3 SMT Solver Output
-```json
-{
-  "violations": [{
-    "factor_number": "II",
-    "principle_name": "Store config in the environment", 
-    "z3_model": "[fact_config_hardcoded_0 = True, violates_factor_ii = True]",
-    "suggested_fix": "Move all configuration to environment variables"
-  }],
-  "compliance_score": 0.9,
-  "method": "REAL_NEURO_SYMBOLIC"
-}
-```
+## 🔗 Related Projects
 
-## 🔬 Research Applications
+- [OPA/Rego Documentation](https://www.openpolicyagent.org/docs/latest/)
+- [Kubernetes Policy Management](https://kubernetes.io/docs/concepts/policy/)
+- [SAP Cloud Application Programming Model](https://cap.cloud.sap/)
 
-This system demonstrates:
-- **Neuro-Symbolic AI**: Combining neural and symbolic reasoning
-- **Formal Verification**: Mathematical proofs of security violations  
-- **Automated Security**: AI-driven policy compliance checking
-- **Cloud-Native Validation**: 12-Factor App principle enforcement
+## 📞 Support
 
-## 📁 Key Files
-
-- `app.py` - Main Flask application with all endpoints
-- `real_cloud_native_validator.py` - Real LLM + Z3 SMT validator
-- `xsuaa_policy_engine.py` - XSUAA neuro-symbolic analyzer  
-- `policies/opa/sap-k8s-policies.rego` - Kubernetes security policies
-- `test_*.html` - UI interfaces for different validators
-
-## 🧠 Neural + Symbolic Processing
-
-The system implements true neuro-symbolic AI where:
-1. **LLMs extract facts** from unstructured application code
-2. **Symbolic solvers verify** these facts against formal constraints
-3. **Mathematical proof** provides explainable security violations
-4. **No hallucinations** - only logically provable results
-
-## 🔐 Security Features
-
-- API key protection with .gitignore
-- Defensive security focus only
-- No malicious code generation
-- Formal verification prevents false positives
-- Explainable AI with constraint models
+For questions or issues:
+- Open a GitHub issue
+- Check the demo functionality in different browsers
+- Ensure JavaScript is enabled
 
 ---
 
-**Note**: Replace `your-openai-api-key-here` with actual OpenAI API key in test files before running.
+**Built with ❤️ for demonstrating modern cloud-native security practices**
