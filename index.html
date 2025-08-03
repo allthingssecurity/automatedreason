@@ -358,15 +358,21 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🛡️ Rego Policy Validation Flow</h1>
-            <p>Interactive demonstrations of Kubernetes policy validation with OPA/Rego</p>
+            <h1>🛡️ Neuro-Symbolic Generator-Verifier Loop</h1>
+            <p>Static policy validation for Kubernetes manifests using LLM + Rego</p>
+            
+            <div style="margin: 20px 0;">
+                <a href="architecture.html" style="background: rgba(255,255,255,0.2); color: white; padding: 10px 20px; border-radius: 25px; text-decoration: none; backdrop-filter: blur(10px); transition: all 0.3s ease;">
+                    📖 View Architecture Details
+                </a>
+            </div>
 
             <div class="tab-navigation">
                 <button class="tab-button active" onclick="switchTab('basic')">
                     ⚠️ Traditional: Config Generation
                 </button>
                 <button class="tab-button" onclick="switchTab('enterprise')">
-                    ✅ Neuro-Symbolic: Policy DSL
+                    ✅ Neuro-Symbolic: Generator-Verifier Loop
                 </button>
             </div>
         </div>
