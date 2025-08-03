@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -33,7 +34,7 @@
         .header h1 {
             font-size: 2.5rem;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         .header p {
@@ -51,7 +52,7 @@
         }
 
         .tab-button {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             color: white;
             border: none;
             padding: 15px 30px;
@@ -64,14 +65,14 @@
         }
 
         .tab-button:hover {
-            background: rgba(255,255,255,0.3);
+            background: rgba(255, 255, 255, 0.3);
             transform: translateY(-2px);
         }
 
         .tab-button.active {
             background: white;
             color: #667eea;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
         }
 
         /* Demo Content */
@@ -79,7 +80,7 @@
             background: white;
             border-radius: 15px;
             padding: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             margin-bottom: 30px;
             min-height: 600px;
         }
@@ -282,12 +283,14 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
 
         /* Tech Stack */
         .tech-stack {
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
             padding: 20px;
             margin-top: 20px;
@@ -308,7 +311,7 @@
         }
 
         .tech-tag {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             color: white;
             padding: 5px 12px;
             border-radius: 20px;
@@ -327,42 +330,43 @@
             .flow-container {
                 grid-template-columns: 1fr;
             }
-            
+
             .tab-navigation {
                 flex-direction: column;
                 align-items: center;
             }
-            
+
             .tab-button {
                 width: 250px;
             }
-            
+
             .header h1 {
                 font-size: 2rem;
             }
-            
+
             .container {
                 padding: 15px;
             }
-            
+
             .demo-content {
                 padding: 20px;
             }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="header">
             <h1>🛡️ Rego Policy Validation Flow</h1>
             <p>Interactive demonstrations of Kubernetes policy validation with OPA/Rego</p>
-            
+
             <div class="tab-navigation">
                 <button class="tab-button active" onclick="switchTab('basic')">
-                    🚀 Basic K8s Deployment
+                    ⚠️ Traditional: Config Generation
                 </button>
                 <button class="tab-button" onclick="switchTab('enterprise')">
-                    🏢 SAP Enterprise Workload
+                    ✅ Neuro-Symbolic: Policy DSL
                 </button>
             </div>
         </div>
@@ -370,12 +374,13 @@
         <div class="demo-content">
             <!-- Basic Demo Panel -->
             <div class="demo-panel active" id="basicPanel">
-                <div class="demo-title">🚀 Basic K8s Deployment Validation</div>
+                <div class="demo-title">⚠️ Traditional: Configuration Generation</div>
                 <div class="demo-description">
-                    Watch how a simple Kubernetes deployment gets validated against SAP production policies. 
-                    See the LLM generate configurations, Rego policies catch violations, and the iterative repair process in action.
+                    Traditional approach: LLM generates Kubernetes manifests (configurations) that are then validated
+                    against pre-existing policies.
+                    This often leads to violations and requires multiple repair cycles.
                 </div>
-                
+
                 <div class="progress-bar">
                     <div class="progress-fill" id="basicProgressFill"></div>
                 </div>
@@ -396,12 +401,13 @@
 
             <!-- Enterprise Demo Panel -->
             <div class="demo-panel" id="enterprisePanel">
-                <div class="demo-title">🏢 SAP Enterprise Workload Validation</div>
+                <div class="demo-title">✅ Neuro-Symbolic: Policy DSL Generation</div>
                 <div class="demo-description">
-                    Experience a complex SAP enterprise scenario with CAP services, audit logging, 
-                    EU data residency requirements, and high availability constraints. See advanced policy validation in action.
+                    True neuro-symbolic approach: LLM generates Rego DSL (policy language) that can validate any
+                    configuration.
+                    This creates reusable, composable policies that embody symbolic reasoning.
                 </div>
-                
+
                 <div class="progress-bar">
                     <div class="progress-fill" id="enterpriseProgressFill"></div>
                 </div>
@@ -563,66 +569,115 @@ spec:
                 steps: [
                     {
                         icon: '📋',
-                        title: '1. Enterprise Requirements',
-                        content: 'Complex SAP enterprise requirements:',
-                        data: '"Deploy SAP CAP service with EU data residency, audit logging, HA setup, and integration with XSUAA for authentication"'
+                        title: '1. Policy Requirements',
+                        content: 'User describes policy requirements in natural language:',
+                        data: '"Create policies for SAP workloads: require EU data residency labels, enforce resource limits, mandate audit logging sidecars"'
                     },
                     {
                         icon: '🧠',
-                        title: '2. Advanced AI Generation',
-                        content: 'GPT-4 generates complex enterprise manifest:',
-                        data: 'Waiting for generation...'
+                        title: '2. Neural Rego DSL Generation',
+                        content: 'GPT-4 generates Rego policy language (DSL):',
+                        data: 'Waiting for Rego DSL generation...'
                     },
                     {
                         icon: '🛡️',
-                        title: '3. Enterprise Policy Validation',
-                        content: 'Advanced Rego policies for enterprise compliance:',
-                        data: 'Waiting for validation...'
+                        title: '3. Policy Compilation',
+                        content: 'Generated Rego policies are compiled and validated:',
+                        data: 'Waiting for policy compilation...'
                     },
                     {
-                        icon: '🔧',
-                        title: '4. Enterprise Repair',
-                        content: 'AI repairs complex enterprise violations:',
-                        data: 'Waiting for repair...'
+                        icon: '�',
+                        title: '4. Test Configuration',
+                        content: 'Sample K8s manifest to validate against generated policies:',
+                        data: 'Waiting for test manifest...'
                     },
                     {
                         icon: '✅',
-                        title: '5. Compliance Verification',
-                        content: 'Enterprise compliance verification:',
-                        data: 'Waiting for verification...'
+                        title: '5. Policy Validation',
+                        content: 'Generated Rego policies validate the configuration:',
+                        data: 'Waiting for policy validation...'
                     },
                     {
                         icon: '🏢',
-                        title: '6. Enterprise Ready',
-                        content: 'SAP enterprise deployment ready:',
+                        title: '6. Reusable Policy DSL',
+                        content: 'Generated policies can validate any future configuration:',
                         data: 'Waiting for completion...'
                     }
                 ],
-                manifest: `apiVersion: apps/v1
+                generatedRegoDSL: `package sap.k8s.security
+
+import rego.v1
+
+# EU Data residency policy - Generated by Neural AI
+deny contains msg if {
+    input.kind in ["Deployment", "StatefulSet"]
+    labels := input.metadata.labels
+    labels.region
+    startswith(labels.region, "eu")
+    not labels["data-residency"]
+    msg := {
+        "rule_id": "data-residency",
+        "title": "Missing Data Residency Label",
+        "description": "EU deployments must have data-residency label",
+        "severity": "high",
+        "suggested_fix": "Add label: data-residency: EU"
+    }
+}
+
+# Resource limits policy - Generated by Neural AI
+deny contains msg if {
+    input.kind == "Deployment"
+    container := input.spec.template.spec.containers[_]
+    not container.resources.limits
+    msg := {
+        "rule_id": "resource-limits",
+        "title": "Missing Resource Limits",
+        "description": "SAP workloads must specify resource limits",
+        "severity": "high",
+        "suggested_fix": "Add resources.limits with cpu and memory"
+    }
+}
+
+# Audit logging policy - Generated by Neural AI
+deny contains msg if {
+    input.kind == "Deployment"
+    containers := input.spec.template.spec.containers
+    not has_audit_sidecar(containers)
+    msg := {
+        "rule_id": "audit-logging",
+        "title": "Missing Audit Logging Sidecar",
+        "description": "SAP services must include audit logging",
+        "severity": "critical",
+        "suggested_fix": "Add audit-logger sidecar container"
+    }
+}
+
+has_audit_sidecar(containers) if {
+    container := containers[_]
+    contains(container.name, "audit")
+}`,
+                testManifest: `apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sap-cap-service
+  name: test-sap-service
   labels:
-    app: cap-service
+    app: test-service
     region: eu-central-1
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: cap-service
+      app: test-service
   template:
     metadata:
       labels:
-        app: cap-service
+        app: test-service
     spec:
       containers:
-      - name: cap-service
-        image: sap-cap:latest
+      - name: test-service
+        image: sap-service:latest
         ports:
-        - containerPort: 4004
-        env:
-        - name: XSUAA_URL
-          value: "https://tenant.authentication.eu10.hana.ondemand.com"`,
+        - containerPort: 8080`,
                 violations: [
                     { title: "Missing Data Residency Label", description: "EU deployments must have data-residency label", severity: "high" },
                     { title: "Missing Resource Limits", description: "Enterprise containers must specify resource limits", severity: "high" },
@@ -704,14 +759,14 @@ spec:
         function initializeDemo(demoType) {
             const flowContainer = document.getElementById(demoType + 'Flow');
             const steps = demoData[demoType].steps;
-            
+
             flowContainer.innerHTML = '';
-            
+
             steps.forEach((step, index) => {
                 const stepDiv = document.createElement('div');
                 stepDiv.className = 'flow-step';
                 stepDiv.id = `${demoType}Step${index + 1}`;
-                
+
                 stepDiv.innerHTML = `
                     <div class="step-header">
                         <div class="step-icon">${step.icon}</div>
@@ -722,7 +777,7 @@ spec:
                         <div class="code-block" id="${demoType}Data${index + 1}">${step.data}</div>
                     </div>
                 `;
-                
+
                 flowContainer.appendChild(stepDiv);
             });
         }
@@ -733,7 +788,7 @@ spec:
 
         function activateStep(demoType, stepNum) {
             const steps = demoData[demoType].steps;
-            
+
             for (let i = 1; i <= steps.length; i++) {
                 const step = document.getElementById(`${demoType}Step${i}`);
                 step.classList.remove('active');
@@ -743,7 +798,7 @@ spec:
                     step.classList.remove('completed');
                 }
             }
-            
+
             if (stepNum <= steps.length) {
                 document.getElementById(`${demoType}Step${stepNum}`).classList.add('active');
             }
@@ -751,78 +806,130 @@ spec:
 
         async function startDemo(demoType) {
             if (demoStates[demoType].isRunning) return;
-            
+
             demoStates[demoType].isRunning = true;
             document.getElementById(demoType + 'StartBtn').disabled = true;
             document.getElementById(demoType + 'ResetBtn').disabled = false;
-            
+
             const data = demoData[demoType];
-            
+
             // Step 1: Show requirements
             demoStates[demoType].currentStep = 1;
             activateStep(demoType, 1);
             updateProgress(demoType, 16);
             await sleep(2000);
 
-            // Step 2: Generate manifest
+            // Step 2: Generate manifest or Rego DSL
             demoStates[demoType].currentStep = 2;
             activateStep(demoType, 2);
             updateProgress(demoType, 32);
-            
-            document.getElementById(`${demoType}Data2`).innerHTML = 
-                'Generating with OpenAI GPT-4...<span class="loading-spinner"></span>';
-            
-            await sleep(3000);
-            document.getElementById(`${demoType}Data2`).textContent = data.manifest;
+
+            if (demoType === 'enterprise') {
+                document.getElementById(`${demoType}Data2`).innerHTML =
+                    'Neural AI generating Rego DSL policies...<span class="loading-spinner"></span>';
+                await sleep(3000);
+                document.getElementById(`${demoType}Data2`).textContent = data.generatedRegoDSL;
+            } else {
+                document.getElementById(`${demoType}Data2`).innerHTML =
+                    'Generating with OpenAI GPT-4...<span class="loading-spinner"></span>';
+                await sleep(3000);
+                document.getElementById(`${demoType}Data2`).textContent = data.manifest;
+            }
             await sleep(2000);
 
-            // Step 3: Validate with Rego
+            // Step 3: Different flow for enterprise (policy compilation) vs basic (validation)
             demoStates[demoType].currentStep = 3;
             activateStep(demoType, 3);
             updateProgress(demoType, 48);
-            
-            document.getElementById(`${demoType}Data3`).innerHTML = 
-                'Running OPA/Rego validation...<span class="loading-spinner"></span>';
-            
-            await sleep(2500);
-            
-            let violationHtml = '<div class="violation-list">';
-            data.violations.forEach(v => {
-                violationHtml += `
-                    <div class="violation-item">
-                        <div class="violation-title">❌ ${v.title}</div>
-                        <div class="violation-desc">${v.description}</div>
-                    </div>
-                `;
-            });
-            violationHtml += '</div>';
-            violationHtml += `<p><strong>Compliance Score:</strong> ${Math.max(0, 100 - data.violations.length * 15)}% (${data.violations.length} violations found)</p>`;
-            
-            document.getElementById(`${demoType}Data3`).innerHTML = violationHtml;
-            await sleep(3000);
 
-            // Step 4: Repair
-            demoStates[demoType].currentStep = 4;
-            activateStep(demoType, 4);
-            updateProgress(demoType, 64);
-            
-            document.getElementById(`${demoType}Data4`).innerHTML = 
-                'Neural AI repairing violations...<span class="loading-spinner"></span>';
-            
-            await sleep(3500);
-            document.getElementById(`${demoType}Data4`).textContent = data.repairedManifest;
-            await sleep(2000);
+            if (demoType === 'enterprise') {
+                document.getElementById(`${demoType}Data3`).innerHTML =
+                    'Compiling generated Rego policies...<span class="loading-spinner"></span>';
+                await sleep(2000);
+                document.getElementById(`${demoType}Data3`).innerHTML =
+                    '<div class="success-message">✅ Rego policies compiled successfully!<br/>🛡️ Ready to validate configurations</div>';
+                await sleep(2000);
+
+                // Step 4: Show test manifest for enterprise
+                demoStates[demoType].currentStep = 4;
+                activateStep(demoType, 4);
+                updateProgress(demoType, 64);
+
+                document.getElementById(`${demoType}Data4`).innerHTML =
+                    'Loading test configuration...<span class="loading-spinner"></span>';
+                await sleep(2000);
+                document.getElementById(`${demoType}Data4`).textContent = data.testManifest;
+                await sleep(2000);
+
+                // Step 5: Policy validation for enterprise
+                demoStates[demoType].currentStep = 5;
+                activateStep(demoType, 5);
+                updateProgress(demoType, 80);
+
+                document.getElementById(`${demoType}Data5`).innerHTML =
+                    'Generated Rego policies validating configuration...<span class="loading-spinner"></span>';
+                await sleep(2500);
+
+                let violationHtml = '<div class="violation-list">';
+                data.violations.slice(0, 3).forEach(v => {
+                    violationHtml += `
+                        <div class="violation-item">
+                            <div class="violation-title">❌ ${v.title}</div>
+                            <div class="violation-desc">${v.description} (Detected by generated Rego policy)</div>
+                        </div>
+                    `;
+                });
+                violationHtml += '</div>';
+                violationHtml += `<p><strong>Generated Policy Validation:</strong> Found 3 violations using AI-generated Rego DSL</p>`;
+
+                document.getElementById(`${demoType}Data5`).innerHTML = violationHtml;
+                await sleep(3000);
+
+            } else {
+                // Basic demo - traditional validation
+                document.getElementById(`${demoType}Data3`).innerHTML =
+                    'Running OPA/Rego validation...<span class="loading-spinner"></span>';
+
+                await sleep(2500);
+
+                let violationHtml = '<div class="violation-list">';
+                data.violations.forEach(v => {
+                    violationHtml += `
+                        <div class="violation-item">
+                            <div class="violation-title">❌ ${v.title}</div>
+                            <div class="violation-desc">${v.description}</div>
+                        </div>
+                    `;
+                });
+                violationHtml += '</div>';
+                violationHtml += `<p><strong>Compliance Score:</strong> ${Math.max(0, 100 - data.violations.length * 15)}% (${data.violations.length} violations found)</p>`;
+
+                document.getElementById(`${demoType}Data3`).innerHTML = violationHtml;
+                await sleep(3000);
+
+                // Step 4: Repair for basic demo
+                demoStates[demoType].currentStep = 4;
+                activateStep(demoType, 4);
+                updateProgress(demoType, 64);
+
+                document.getElementById(`${demoType}Data4`).innerHTML =
+                    'Neural AI repairing violations...<span class="loading-spinner"></span>';
+
+                await sleep(3500);
+                document.getElementById(`${demoType}Data4`).textContent = data.repairedManifest;
+                await sleep(2000);
+            }
 
             // Step 5: Final validation
             demoStates[demoType].currentStep = 5;
             activateStep(demoType, 5);
             updateProgress(demoType, 80);
-            
-            document.getElementById(`${demoType}Data5`).innerHTML = 
+
+            document.getElementById(`${demoType}Data5`).innerHTML =
                 'Running final validation...<span class="loading-spinner"></span>';
-            
+
             await sleep(2000);
-            document.getElementById(`${demoType}Data5`).innerHTML = 
+            document.getElementById(`${demoType}Data5`).innerHTML =
                 '<div class="success-message">✅ All policies passed! Compliance Score: 100%</div>';
             await sleep(2000);
 
@@ -830,34 +937,38 @@ spec:
             demoStates[demoType].currentStep = 6;
             activateStep(demoType, 6);
             updateProgress(demoType, 100);
-            
-            const readyMessage = demoType === 'basic' 
-                ? '🚀 Manifest is production-ready and compliant with SAP policies!'
-                : '🏢 Enterprise SAP workload is compliant and ready for production deployment!';
-            
-            document.getElementById(`${demoType}Data6`).innerHTML = 
-                `<div class="success-message">${readyMessage}</div>`;
-            
+
+            if (demoType === 'enterprise') {
+                // Neuro-symbolic approach - show reusable policy DSL
+                document.getElementById(`${demoType}Data6`).innerHTML =
+                    '<div class="success-message">🧠🛡️ Generated Rego DSL can validate ANY configuration!<br/>✅ Reusable, composable policies<br/>🚀 True neuro-symbolic reasoning achieved</div>';
+            } else {
+                // Traditional approach - show final repaired manifest
+                const readyMessage = '🚀 Manifest is production-ready and compliant with SAP policies!';
+                document.getElementById(`${demoType}Data6`).innerHTML =
+                    `<div class="success-message">${readyMessage}</div>`;
+            }
+
             demoStates[demoType].isRunning = false;
         }
 
         function resetDemo(demoType) {
             if (demoStates[demoType].isRunning) return;
-            
+
             demoStates[demoType].currentStep = 0;
             updateProgress(demoType, 0);
-            
+
             const steps = demoData[demoType].steps;
-            
+
             // Reset all steps
             for (let i = 1; i <= steps.length; i++) {
                 const step = document.getElementById(`${demoType}Step${i}`);
                 step.classList.remove('active', 'completed');
-                
+
                 // Reset content
-                document.getElementById(`${demoType}Data${i}`).textContent = steps[i-1].data;
+                document.getElementById(`${demoType}Data${i}`).textContent = steps[i - 1].data;
             }
-            
+
             // Reset buttons
             document.getElementById(demoType + 'StartBtn').disabled = false;
             document.getElementById(demoType + 'ResetBtn').disabled = true;
@@ -868,7 +979,7 @@ spec:
         }
 
         // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             initializeDemo('basic');
             initializeDemo('enterprise');
             resetDemo('basic');
@@ -876,4 +987,5 @@ spec:
         });
     </script>
 </body>
+
 </html>
