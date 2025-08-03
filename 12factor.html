@@ -276,8 +276,8 @@
     
     <div class="container">
         <div class="header">
-            <h1>🧠⚡ 12-Factor App Validation with Z3</h1>
-            <p>Neuro-Symbolic Architecture Compliance using SMT Solver</p>
+            <h1>🧠⚡ 12-Factor Cloud-Native App Validation</h1>
+            <p>Generator-Verifier Loop using LLM + Z3 SMT Solver for Cloud-Native Compliance</p>
         </div>
 
         <!-- Architecture Overview -->
@@ -285,21 +285,22 @@
             <h2 class="section-title">🏗️ Neuro-Symbolic Architecture for 12-Factor Apps</h2>
             
             <div class="highlight-box">
-                <strong>Key Innovation:</strong> Use Z3 SMT Solver to formally verify 12-factor app compliance<br/>
-                <em>Neural AI generates code artifacts → Z3 symbolic reasoning validates architecture</em>
+                <strong>Generator-Verifier Loop for Cloud-Native Apps:</strong> LLM generates code → Z3 validates 12-factor compliance → Loop until compliant<br/>
+                <em>Ensures cloud-native applications follow all 12-factor principles before deployment</em>
             </div>
 
             <div class="architecture-flow">
-                <div class="flow-box">👤<br/>User Requirements</div>
+                <div class="flow-box">👤<br/>User Requirements<br/><small>(Cloud-Native App)</small></div>
                 <div class="flow-arrow">→</div>
-                <div class="flow-box">🧠<br/>LLM Generates<br/>Code Artifacts</div>
+                <div class="flow-box">🧠<br/>LLM Generator<br/><small>(Code Artifacts)</small></div>
                 <div class="flow-arrow">→</div>
-                <div class="flow-box">⚡<br/>Z3 SMT Solver<br/>Validates Architecture</div>
+                <div class="flow-box">⚡<br/>Z3 Verifier<br/><small>(12-Factor Check)</small></div>
             </div>
 
-            <p style="text-align: center; font-size: 1.1rem; color: #4a5568; margin-top: 20px;">
-                <strong>Generator-Verifier Loop:</strong> Iterates until all 12-factor principles are satisfied
-            </p>
+            <div style="text-align: center; margin: 20px 0; padding: 15px; background: #f0fff4; border: 2px solid #48bb78; border-radius: 10px;">
+                <strong style="color: #22543d; font-size: 1.2rem;">🔄 Generator-Verifier Loop</strong><br/>
+                <span style="color: #2f855a;">If violations found → LLM repairs code → Z3 re-validates → Repeat until 100% compliant</span>
+            </div>
         </div>
 
         <!-- 12-Factor Principles as Z3 Constraints -->
@@ -463,14 +464,45 @@ cds.serve('all').in('app').to('express').at('/')
                 </div>
                 
                 <div class="demo-step">
-                    <strong>Z3 Extracts Architectural Facts:</strong><br/>
-                    <div class="code-block z3-code"># Facts extracted from code analysis
-has_package_json = True
-has_env_vars = True
-config_hardcoded = True      # Found: dbConfig with hardcoded values
-stores_state = False         # No persistent state detected
-logs_to_file = True         # Found: fs.appendFileSync('./app.log')
-admin_mixed = True          # Found: adminCleanup() in main app</div>
+                    <strong>LLM Extracts Architectural Facts:</strong><br/>
+                    <div class="code-block python-code"># Neural AI analyzes code and extracts cloud-native architectural facts
+facts = {
+    'has_package_json': True,
+    'has_env_vars': True,
+    'config_hardcoded': True,      # Found: dbConfig with hardcoded values
+    'stores_state': False,         # No persistent state detected
+    'logs_to_file': True,         # Found: fs.appendFileSync('./app.log')
+    'admin_mixed': True           # Found: adminCleanup() in main app
+}</div>
+                </div>
+                
+                <div class="demo-step">
+                    <strong>LLM Encodes Facts as Z3 Constraints:</strong><br/>
+                    <div class="code-block z3-code"># LLM converts extracted facts to Z3 boolean variables and constraints
+import z3
+
+# Create Z3 solver and variables from LLM-extracted facts
+solver = z3.Solver()
+has_package_json = z3.Bool('has_package_json')
+config_hardcoded = z3.Bool('config_hardcoded')
+logs_to_file = z3.Bool('logs_to_file')
+admin_mixed = z3.Bool('admin_mixed')
+
+# Set facts as constraints based on LLM analysis
+solver.add(has_package_json == True)
+solver.add(config_hardcoded == True)    # Violation detected by LLM
+solver.add(logs_to_file == True)        # Violation detected by LLM
+solver.add(admin_mixed == True)         # Violation detected by LLM
+
+# Add 12-factor cloud-native compliance rules
+violates_factor_iii = z3.Bool('violates_factor_iii')
+solver.add(violates_factor_iii == config_hardcoded)
+
+violates_factor_xi = z3.Bool('violates_factor_xi')
+solver.add(violates_factor_xi == logs_to_file)
+
+violates_factor_xii = z3.Bool('violates_factor_xii')
+solver.add(violates_factor_xii == admin_mixed)</div>
                 </div>
                 
                 <div class="demo-step">
