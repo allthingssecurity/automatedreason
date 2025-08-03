@@ -1,5 +1,0 @@
-title: Rego Policy Validation Flow Demo
-description: Interactive demonstrations of Kubernetes policy validation with OPA/Rego
-theme: minima
-plugins:
-  - jekyll-feed
